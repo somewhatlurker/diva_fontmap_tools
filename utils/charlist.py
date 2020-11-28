@@ -1,8 +1,6 @@
-from os.path import dirname, exists as pathexists, isfile, splitext, join as joinpath, basename
+from os.path import exists as pathexists, isfile, splitext
 from sys import argv
 import json
-from re import compile as re_compile
-font_json_fmt_regex = re_compile(r'font(\d+)(_\d+x\d+)?\.json')
 
 if len(argv) != 2:
     print ('Usage: {} [FONT_JSON_DIR]'.format(argv[0]))
