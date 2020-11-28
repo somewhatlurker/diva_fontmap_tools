@@ -15,9 +15,9 @@ font:
 0x05: character line height (byte)
 0x06: glyph box width (size of character in texture) (byte)
 0x07: glyph box height (size of character in texture) (byte)
-0x08: layout param 1 -- unknown use (looks like only second lowest bit matters?)
-0x09: metric08 in TLAC Drawing RawFont -- defines a fraction with next byte (seems to change startup screen margins)
-0x0a: metric09 in TLAC Drawing RawFont
+0x08: offset 0x38 in TLAC Drawing RawFont -- unknown use (looks like only second lowest bit matters?)
+0x09: offset 0x08 in TLAC Drawing RawFont -- defines a fraction with next byte (seems to change startup screen margins)
+0x0a: offset 0x09 in TLAC Drawing RawFont
 0x0b: padding
 0x0c: ???? (seems to be 4x 0x00, possibly more params)
 0x10: number of characters per row (not used by the game?)
