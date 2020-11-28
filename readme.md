@@ -18,3 +18,8 @@ PDAFT Fontmap Tool
 
 ##### Writing
 - AFT fontmap.farc
+
+### Extra Utilities
+##### charlist
+- Outputs a UTF-16 text file containing all characters in the specified font file.
+    (`python utils/charlist.py fontmap/font9_24x24.json`)
