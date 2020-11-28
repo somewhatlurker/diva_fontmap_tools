@@ -8,7 +8,7 @@ import pyfarc
 
 
 font_json_fmt = 'font{}_{}x{}.json'
-font_json_fmt_regex = re_compile(r'font(\d+)(_\d+x\d+)?\.json')
+font_json_fmt_regex = re_compile(r'font(\d+)(_\d+x\d+)?\.json$')
 
 fontmap_magic = ['FMH3', 'FONM']
 
