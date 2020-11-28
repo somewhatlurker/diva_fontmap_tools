@@ -1,0 +1,34 @@
+fontmap reversing work by myself and SuzukiKennji#6585
+
+header:
+0x00: "FMH3" magic
+0x04: padding (0x00 x4)
+0x08: number of fonts
+0x0c: pointer to font pointers
+
+font pointers:
+1x 32 bit address per font
+
+font:
+0x00: map id
+0x04: character advance width (byte) -- note: size metrics are overridden by the game
+0x05: character line height (byte)
+0x06: glyph box width (size of character in texture) (byte)
+0x07: glyph box height (size of character in texture) (byte)
+0x08: layout param 1 -- unknown use (looks like only second lowest bit matters?)
+0x09: metric08 in TLAC Drawing RawFont -- defines a fraction with next byte (seems to change startup screen margins)
+0x0a: metric09 in TLAC Drawing RawFont
+0x0b: padding
+0x0c: ???? (seems to be 4x 0x00, possibly more params)
+0x10: number of characters per row (not used by the game?)
+0x14: number of characters
+0x18: pointer to characters
+
+character:
+0x00: unicode character id (16 bit)
+0x02: 0x01 if halfwidth (or variable width?) else 0x00
+0x03: padding
+0x04: texture column
+0x05: texture row
+0x06: kern? (position of glypth in box)
+0x07: glypth width
