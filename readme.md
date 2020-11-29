@@ -31,24 +31,26 @@ PDAFT Fontmap Tools
 
 #### generate_font (ALPHA)
  - Generates a font.
-     (`python generate_font.py -f [FONT] -o [OUTPUT_NAME]`, detailed usage with `-h`)
+     (`python generate_font.py -f [FONT] -o [OUTPUT_NAME] -s [SIZE]`, detailed usage with `-h`)
  
  ##### Guide
  1. Extract original fontmap
+     - Use fontmap_extract as shown above
  2. Generate your bold font
      - Use `-v [VARIATION]` to select it if it shares a source file with other variations
          `--list_variations` will show possibe options
      - `-i` may be required for ttc files
  3. Open your bold font's json output and write down `[advance_width],[line_height],[box_width],[box_height]`
      (eg. `24,24,26,26`)
- 4. Generate your normal font, using the above metrics in `-m` (eg. `-m 24,24,26,26`)
+ 4. Generate your normal font, using the bold font's metrics in `-m` (eg. `-m 24,24,26,26`)
  5. Replace the main font json (`font9_24x24.json` for AFT) with your bold font's json
  6. Rebuild fontmap.farc
+     - Use fontmap_extract as shown above
  7. Replace flipped textures using MikuMikuModel in `spr_fnt_***`.
  
  ##### Notes
  - The tool has had very little testing
- - Only checked with fixed width fonts so far
+ - Proportional (non-fixed width) fonts may give bad results
  - It could really use a fallback mechanism for missing characters
 
 　
