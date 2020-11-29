@@ -145,3 +145,4 @@ cython_debug/
 *.json
 *.png
 *.ttc
+*.ttf
