@@ -142,5 +142,6 @@ cython_debug/
 *.bak
 *.bin
 *.fnm
-font*.json
+*.json
 *.png
+*.ttc
