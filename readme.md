@@ -16,10 +16,11 @@ PDAFT Fontmap Tools
  ##### Format Support
  ###### Reading
  - AFT fontmap.farc or fontmap.bin
+ - FT/M39s fontmap.bin (direct farc reading not supported)
  - X fontmap.fnm (direct farc reading not supported)
  
  ###### Writing
- - AFT fontmap.farc
+ - AFT/FT/M39s fontmap.farc
 
 　
 
@@ -43,10 +44,11 @@ PDAFT Fontmap Tools
  3. Open your bold font's json output and write down `[advance_width],[line_height],[box_width],[box_height]`
      (eg. `24,24,26,26`)
  4. Generate your normal font, using the bold font's metrics in `-m` (eg. `-m 24,24,26,26`)
- 5. Replace the main font json (`font9_24x24.json` for AFT) with your bold font's json
- 6. Rebuild fontmap.farc
+ 5. Replace the main font json (`font9_24x24.json` for AFT, `font13` or `font20` for M39's Japanese, I'm not sure which) with your bold font's json
+ 6. Set `id` in your new json to match what was in the original json (0 for AFT)
+ 7. Rebuild fontmap.farc
      - Use fontmap_extract as shown above
- 7. Replace flipped textures using MikuMikuModel in `spr_fnt_***`.
+ 8. Replace flipped textures using MikuMikuModel in `spr_fnt_***`.
  
  ##### Notes
  - The tool has had very little testing
