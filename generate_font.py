@@ -25,7 +25,7 @@ if not args.font:
     exit(1)
 
 try:
-    pil_font = ImageFont.truetype(args.font, args.size - 1, args.ttc_index)
+    pil_font = ImageFont.truetype(args.font, int(args.size) - 1, args.ttc_index)
 except Exception as e:
     print ('Error loading font: {}'.format(str(e)))
     exit(1)
