@@ -1,25 +1,28 @@
-PDAFT Fontmap Tool
-==================
+PDAFT Fontmap Tools
+===================
 
-### Installation
+## Installation
 1. Install Python 3
 2. Run `python -m pip install -r requirements.txt` in a terminal
 
-### Usage
-- Extract an fontmap to directory with matching name: `python fontmap_tool.py fontmap.farc`
-    (creates JSON files in directory fontmap)
-- Build an AFT fontmap from a directory: `python fontmap_tool.py dir_name`
-    (creates dir_name.farc)
+## Tools
+#### fontmap_extract
+ ##### Usage
+ - Extract an fontmap to directory with matching name: `python fontmap_tool.py fontmap.farc`
+     (creates JSON files in directory fontmap)
+ - Build an AFT fontmap from a directory: `python fontmap_tool.py dir_name`
+     (creates dir_name.farc)
+ 
+ ##### Format Support
+ ###### Reading
+ - AFT fontmap.farc or fontmap.bin
+ - X fontmap.fnm (direct farc reading not supported)
+ 
+ ###### Writing
+ - AFT fontmap.farc
 
-### Format Support
-##### Reading
-- AFT fontmap.farc or fontmap.bin
-- X fontmap.fnm (direct farc reading not supported)
+　
 
-##### Writing
-- AFT fontmap.farc
-
-### Extra Utilities
-##### charlist
-- Outputs a UTF-16 text file containing all characters in the specified font file.
-    (`python utils/charlist.py fontmap/font9_24x24.json`)
+#### charlist
+ - Outputs a UTF-16 text file containing all characters in the specified font file.
+     (`python utils/charlist.py fontmap/font9_24x24.json`)
