@@ -98,8 +98,7 @@ if args.metrics:
 else:
     max_char_width = 0
     for char in charlist: # iterate to find widest used char
-        w = pil_font.getsize(char)[0] - pil_font.getoffset(char)[0]
-        max_char_width = max(max_char_width, w)
+        max_char_width = max(max_char_width, pil_font.getsize(char)[0])
 
     font_box_size = (max_char_width, font_ascent + font_baseline) # height already is known from metrics
     
@@ -125,6 +124,9 @@ while not fits_in_tex(texture_size, font_box_size, len(charlist)):
 chars_per_row = texture_size[0] // font_box_size[0]
 
 
+max_halfwidth_width = ceil(font_box_size[0] / 2)
+
+
 # get ready to draw
 pil_image = Image.new('RGBA', (texture_size[0], texture_size[1]), color=0x00000000)
 pil_draw = ImageDraw.Draw(pil_image)
@@ -134,15 +136,13 @@ tex_idx = (0, 0)
 
 out_chars = []
 for char in charlist:
-    offset = pil_font.getoffset(char)[0]
-    # if offset: print (offset)
-    width = pil_font.getsize(char)[0] - offset
-    halfwidth = width <= ceil(font_box_size[0] / 2)
+    width = pil_font.getsize(char)[0]
+    halfwidth = width <= max_halfwidth_width
     if halfwidth:
-        x_adj = (ceil(font_box_size[0] / 2) - width) // 2
+        x_adj = (max_halfwidth_width - width) // 2
     else:
         x_adj = (font_box_size[0] - width) // 2
-    pil_draw.text((coord[0] + x_adj - offset, coord[1]), char, fill=0xffffffff, font=pil_font, anchor='ls')
+    pil_draw.text((coord[0] + x_adj, coord[1]), char, fill=0xffffffff, font=pil_font, anchor='ls')
     
     out_chars += [{
         "codepoint": ord(char),
