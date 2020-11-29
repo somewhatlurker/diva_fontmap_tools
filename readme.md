@@ -8,9 +8,9 @@ PDAFT Fontmap Tools
 ## Tools
 #### fontmap_extract
  ##### Usage
- - Extract an fontmap to directory with matching name: `python fontmap_tool.py fontmap.farc`
+ - Extract an fontmap to directory with matching name: `python fontmap_extract.py fontmap.farc`
      (creates JSON files in directory fontmap)
- - Build an AFT fontmap from a directory: `python fontmap_tool.py dir_name`
+ - Build an AFT fontmap from a directory: `python fontmap_extract.py dir_name`
      (creates dir_name.farc)
  
  ##### Format Support
