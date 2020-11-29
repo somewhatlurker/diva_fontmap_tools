@@ -143,3 +143,4 @@ cython_debug/
 *.bin
 *.fnm
 font*.json
+*.png
