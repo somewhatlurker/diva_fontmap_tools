@@ -83,6 +83,9 @@ font_box_size = (0, 0)
 
 font_ascent, font_baseline = pil_font.getmetrics() # tuple of the font ascent (the distance from the baseline to the highest outline point) and descent (the distance from the baseline to the lowest outline point, a negative value)
 #font_baseline *= -1
+full_ascent = font_ascent     # these are needed to ensure letters don't overlap
+full_baseline = font_baseline # but fully using them breaks layout a bit
+                              # we can use these as spacing, but position characters using the original ascender height
 
 if args.metrics:
     m = args.metrics.split(',')
@@ -98,9 +101,13 @@ if args.metrics:
 else:
     max_char_width = 0
     for char in charlist: # iterate to find widest used char
-        max_char_width = max(max_char_width, pil_font.getsize(char)[0])
+        junk, char_ascent, char_right, char_baseline = pil_font.getbbox(char, anchor='ls')
+        max_char_width = max(max_char_width, char_right)
+        full_ascent = max(full_ascent, char_ascent * -1)
+        full_baseline = max(full_baseline, char_baseline)
+        
 
-    font_box_size = (max_char_width, font_ascent + font_baseline) # height already is known from metrics
+    font_box_size = (max_char_width + 2, full_ascent + full_baseline + 2) # height already is known from metrics
     
     # kanji_box_size/font_advance_size will be based on the actual space used by a full-size character
     kanji_box_size = max(pil_font.getbbox('鬱', anchor='lt')[2:]) + 1 # just using a square for now
@@ -131,7 +138,7 @@ max_halfwidth_width = ceil(font_box_size[0] / 2)
 pil_image = Image.new('RGBA', (texture_size[0], texture_size[1]), color=0x00000000)
 pil_draw = ImageDraw.Draw(pil_image)
 
-coord = (0, font_ascent)
+coord = (1, font_ascent + 1)
 tex_idx = (0, 0)
 
 out_chars = []
@@ -157,7 +164,7 @@ for char in charlist:
     coord = (coord[0] + font_box_size[0], coord[1])
     if tex_idx[0] >= chars_per_row:
         tex_idx = (0, tex_idx[1] + 1)
-        coord = (0, coord[1] + font_box_size[1])
+        coord = (1, coord[1] + font_box_size[1])
 
 pil_image.save('{}.png'.format(args.output_name), 'PNG')
 
