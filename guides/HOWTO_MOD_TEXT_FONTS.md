@@ -13,7 +13,7 @@ Before starting, read through `selecting_fonts.md` to help with choosing a font 
    See `generating_fonts.md` for info.
    Use `charlist_m39s.txt` as the charlist for games that aren't AFT.
 3. Generate a regular font  
-   **For AFT:** If you patch the game to have separate fontmaps (patch not yet released), you can generate an entirely different font.  
+   **For AFT:** If you patch the game to have separate fontmaps, you can generate an entirely different font.  
    Without a patch, you should only use the same font as used for the bold one (but the non-bold version),
    and copy the sizing info from the generated bold font as explained in `generating_fonts.md`.
    (using two different fixed width fonts may also work well, but is untested)  

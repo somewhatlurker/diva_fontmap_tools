@@ -48,3 +48,4 @@ Look in guides folder.
 #### PD Loader Patches (ALPHA)
  - font_res_support.p enables support for fonts without metrics matching the original font they replace (including HD fonts)
  - proportional_main_font.p enables proportional character width on the two main 24px fonts
+ - separate_fonts.p makes the non-bold 24px font use font id 15
