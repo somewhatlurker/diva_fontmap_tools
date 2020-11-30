@@ -1,11 +1,13 @@
 Selecting Fonts
 ===============
 
-The Project DIVA games are designed to work with fixed width fonts.  
-In addition, the fontmap generator currently requires fonts to support Japanese for good results.
+The fontmap generator currently requires fonts to support Japanese for good results.
 Fonts without Japanese characters will likely have incorrect spacing and be missing characters.
 
-With patches to the game, proportional (non-fixed width) font support can be enabled.
+Additionally, non-English versions of the games are designed to work with fixed width fonts only,
+but the English versions seem to have proportional (non-fixed width) font support enabled.
+
+Non-English versions can be patched to enable proportional font support.  
 The included `proportional_main_font.p` patch does this for AFT's main 24px fonts.
 
 　
