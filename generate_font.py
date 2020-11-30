@@ -7,7 +7,7 @@ def get_args():
     parser = argparse.ArgumentParser(description='DIVA Font Generator')
     parser.add_argument('-f', '--font', default=None, help='source font file')
     parser.add_argument('-o', '--output_name', default=None, help='name for output png and json files')
-    parser.add_argument('-c', '--charlist', default='charlist.txt', help='path to charlist file to use (default: charlist.txt)')
+    parser.add_argument('-c', '--charlist', default='misc/charlist.txt', help='path to charlist file to use (default: misc/charlist.txt)')
     parser.add_argument('-v', '--variation', default=None, help='name of font variation to use (optional)')
     parser.add_argument('-i', '--ttc_index', default=0, help='font index for ttc files')
     parser.add_argument('-s', '--size', default=24, help='font size to use (optional)')

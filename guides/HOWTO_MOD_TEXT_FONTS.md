@@ -11,7 +11,7 @@ Before starting, read through `selecting_fonts.md` to help with choosing a font 
    **For other games:** Extract fontmap.bin with Farcpack or MMM, then `python fontmap_extract.py fontmap.bin`
 2. Generate a bold font  
    See `generating_fonts.md` for info.
-   Use `charlist_m39s.txt` as the charlist for games that aren't AFT.
+   Use `misc/charlist_m39s.txt` as the charlist for games that aren't AFT.
 3. Generate a regular font  
    **For AFT:** If you patch the game to have separate fontmaps, you can generate an entirely different font.  
    Without a patch, you should only use the same font as used for the bold one (but the non-bold version),

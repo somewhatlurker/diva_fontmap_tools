@@ -3,8 +3,8 @@ from os import listdir, mkdir, remove as removefile
 from sys import argv
 from re import compile as re_compile
 import json
-import pyfmh3
-import pyfarc
+from pydiva import pyfmh3
+from pydiva import pyfarc
 
 
 font_json_fmt = 'font{}_{}x{}.json'
