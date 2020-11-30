@@ -22,7 +22,7 @@ Before starting, read through `selecting_fonts.md` to help with choosing a font 
    **For AFT:** The main font is `font9_24x24.json`, and the font inside has id `0`.
    Replace it with your generated bold fontmap, and set the id inside to `0` so it matches the original font.  
    If you patch the game to have separate fontmaps, copy your regular font to `font16.json` and set the id to `15`.
-   **For other games:** I don't know which fonts are correct -- M39s Japanese seems to be `font13` and `font20` though.
+   **For other games:** Check `font_numbers.md` for known info (information may be incorrect)
 5. Rebuild fontmap  
    `python fontmap_extract.py fontmap` (will turn folder contents into a farc)
 6. Replace textures  
