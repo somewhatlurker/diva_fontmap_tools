@@ -1,17 +1,35 @@
 from PIL import Image, ImageDraw, ImageFont
 from math import ceil
+from os.path import join as joinpath
 import json
 import argparse
+
+try:
+    from fontTools.ttLib import TTFont
+except ModuleNotFoundError:
+    print ('fontTools not installed, please reinstall pip requirements')
+    exit(1)
+
+
+def firstFontWithCharacter(font_info, char):
+    # this checks the font's cmap (obtained via fonttools) for presence of a character
+    # because pillow has no way to do that
+    for font in font_info:
+        if ord(char) in font['ft_cmap']:
+            return font
+    
+    return font_info[0]
 
 def get_args():
     parser = argparse.ArgumentParser(description='DIVA Font Generator')
     parser.add_argument('-f', '--font', default=None, help='source font file')
     parser.add_argument('-o', '--output_name', default=None, help='name for output png and json files')
-    parser.add_argument('-c', '--charlist', default='misc/charlist.txt', help='path to charlist file to use (default: misc/charlist.txt)')
+    parser.add_argument('-c', '--charlist', default=joinpath('misc', 'charlist.txt'), help='path to charlist file to use (default: {})'.format(joinpath('misc', 'charlist.txt')))
     parser.add_argument('-v', '--variation', default=None, help='name of font variation to use (optional)')
-    parser.add_argument('-i', '--ttc_index', default=0, help='font index for ttc files')
+    parser.add_argument('-i', '--ttc_index', default='0', help='font index for ttc files')
     parser.add_argument('-s', '--size', default=24, help='font size to use (optional)')
     parser.add_argument('-m', '--metrics', default=None, help='use manual size metrics (comma separated advance, line height, width, height)')
+    parser.add_argument('--shrink', default='0', help='shrink the amount of space each character takes in its box by X pixels')
     parser.add_argument('--force_baseline', default=None, help='force the baseline position as a multiplier of font size (from the top of character box)')
 
     parser.add_argument('--list_variations', action='store_true', help='list available variations of the source font and exit')
@@ -25,36 +43,70 @@ if not args.font:
     print ('No font specified')
     exit(1)
 
-try:
-    pil_font = ImageFont.truetype(args.font, int(args.size) - 1, int(args.ttc_index))
-except Exception as e:
-    print ('Error loading font: {}'.format(str(e)))
+# variations can be prepared later, after checking for list_variations
+fontpaths = args.font.split(',')
+ttc_indices = args.ttc_index.split(',')
+fontshrinks = args.shrink.split(',')
+
+if len(fontpaths) != len(ttc_indices):
+    print ('Different number of fonts and ttc indices')
     exit(1)
 
-print ('Loaded font {}'.format(pil_font.getname()[0]))
+if len(fontpaths) != len(fontshrinks):
+    print ('Different number of fonts and shrink amounts')
+    exit(1)
+
+font_info = []
+for i in range(0, len(fontpaths)):
+    font_info += [{'path': fontpaths[i], 'ttc_index': ttc_indices[i], 'shrink': fontshrinks[i]}]
+
+for font in font_info:
+    try:
+        font['pil_font'] = ImageFont.truetype(font['path'], int(args.size) - 1 - int(font['shrink']), int(font['ttc_index']))
+        font['ft_font'] = TTFont(font['path'], fontNumber=int(font['ttc_index']))
+        font['ft_cmap'] = font['ft_font'].getBestCmap()
+    except Exception as e:
+        print ('Error loading font: {}'.format(str(e)))
+        exit(1)
+
+    print ('Loaded font {}'.format(font['pil_font'].getname()[0]))
 
 
 if args.list_variations:
-    name = pil_font.getname()[0]
-    try:
-        vars = pil_font.get_variation_names()
-    except OSError:
-        print ('{} has no variations'.format(name))
-        exit(1)
-    
-    print ('Variations of {}:'.format(name))
-    for v in vars:
-        print (' {}'.format(v))
+    for font in font_info:
+        name = font['pil_font'].getname()[0]
+        try:
+            vars = font['pil_font'].get_variation_names()
+        except OSError:
+            print ('{} has no variations'.format(name))
+            continue
+        
+        print ('Variations of {}:'.format(name))
+        for v in vars:
+            print (' {}'.format(v))
     exit(0)
 
 if args.variation:
-    try:
-        pil_font.set_variation_by_name(args.variation)
-    except Exception as e:
-        print ('Error setting font variation: {}'.format(str(e)))
+    variations = args.variation.split(',')
+    
+    if len(font_info) != len(variations):
+        print ('Different number of fonts and variations')
         exit(1)
     
-    print ('Using variation {}'.format(args.variation))
+    for i in range(0, len(font_info)):
+        font_info[i]['variation'] = variations[i].strip()
+    
+    for font in font_info:
+        if not font['variation']:
+            continue
+        
+        try:
+            font['pil_font'].set_variation_by_name(font['variation'])
+        except Exception as e:
+            print ('Error setting font variation: {}'.format(str(e)))
+            exit(1)
+    
+        print ('Using variation {} for font {}'.format(font['variation'], font['pil_font'].getname()))
 
 
 if not args.charlist:
@@ -82,7 +134,8 @@ print ('Outputting to {}'.format(args.output_name))
 font_advance_size = (0, 0)
 font_box_size = (0, 0)
 
-font_ascent, font_baseline = pil_font.getmetrics() # tuple of the font ascent (the distance from the baseline to the highest outline point) and descent (the distance from the baseline to the lowest outline point, a negative value)
+# deliberately just use first font for main ascent and baseline values
+font_ascent, font_baseline = font_info[0]['pil_font'].getmetrics() # tuple of the font ascent (the distance from the baseline to the highest outline point) and descent (the distance from the baseline to the lowest outline point, a negative value)
 #font_baseline *= -1
 full_ascent = font_ascent     # these are needed to ensure letters don't overlap
 full_baseline = font_baseline # but fully using them breaks layout a bit
@@ -102,7 +155,8 @@ if args.metrics:
 else:
     max_char_width = 0
     for char in charlist: # iterate to find widest used char
-        junk, char_ascent, char_right, char_baseline = pil_font.getbbox(char, anchor='ls')
+        font = firstFontWithCharacter(font_info, char)
+        junk, char_ascent, char_right, char_baseline = font['pil_font'].getbbox(char, anchor='ls')
         max_char_width = max(max_char_width, char_right)
         full_ascent = max(full_ascent, char_ascent * -1)
         full_baseline = max(full_baseline, char_baseline)
@@ -110,8 +164,9 @@ else:
 
     font_box_size = (max_char_width + 1, full_ascent + full_baseline + 1) # height already is known from metrics
     
+    # kanji_box_size can just use the first specified font
     # kanji_box_size/font_advance_size will be based on the actual space used by a full-size character
-    kanji_box_size = max(pil_font.getbbox('鬱', anchor='lt')[2:]) + 1 # just using a square for now
+    kanji_box_size = max(font_info[0]['pil_font'].getbbox('鬱', anchor='lt')[2:]) + 1 # just using a square for now
     kanji_box_size = max(kanji_box_size, int(args.size)) # ensure advance and line height are at least equal to font size
     font_advance_size = (kanji_box_size, kanji_box_size)
 
@@ -148,13 +203,14 @@ if args.force_baseline != None:
 
 out_chars = []
 for char in charlist:
-    width = pil_font.getsize(char)[0]
+    font = firstFontWithCharacter(font_info, char)
+    width = font['pil_font'].getsize(char)[0]
     halfwidth = width <= max_halfwidth_width
     if halfwidth:
         x_adj = (max_halfwidth_width - width) // 2
     else:
         x_adj = (font_box_size[0] - width) // 2
-    pil_draw.text((coord[0] + x_adj, coord[1]), char, fill=0xffffffff, font=pil_font, anchor='ls')
+    pil_draw.text((coord[0] + x_adj, coord[1]), char, fill=0xffffffff, font=font['pil_font'], anchor='ls')
     
     out_chars += [{
         "codepoint": ord(char),
