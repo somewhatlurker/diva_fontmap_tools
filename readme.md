@@ -41,7 +41,6 @@ Look in guides folder.
  ##### Notes
  - The tool has had very little testing
  - Proportional (non-fixed width) fonts may give bad results
- - It could really use a fallback mechanism for missing characters
  - If you can't load font files, copy the ttf/ttc/??? into the fontmap tools directory and specify the exact filename of the font
 
 　
