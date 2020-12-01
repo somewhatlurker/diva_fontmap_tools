@@ -26,10 +26,10 @@ def get_args():
     parser.add_argument('-o', '--output_name', default=None, help='name for output png and json files')
     parser.add_argument('-c', '--charlist', default=joinpath('misc', 'charlist.txt'), help='path to charlist file to use (default: {})'.format(joinpath('misc', 'charlist.txt')))
     parser.add_argument('-v', '--variation', default=None, help='name of font variation to use (optional)')
-    parser.add_argument('-i', '--ttc_index', default='0', help='font index for ttc files')
+    parser.add_argument('-i', '--ttc_index', default=None, help='font index for ttc files')
     parser.add_argument('-s', '--size', default=24, help='font size to use (optional)')
     parser.add_argument('-m', '--metrics', default=None, help='use manual size metrics (comma separated advance, line height, width, height)')
-    parser.add_argument('--shrink', default='0', help='shrink the amount of space each character takes in its box by X pixels')
+    parser.add_argument('--shrink', default=None, help='shrink the amount of space each character takes in its box by X pixels')
     parser.add_argument('--force_baseline', default=None, help='force the baseline position as a multiplier of font size (from the top of character box)')
 
     parser.add_argument('--list_variations', action='store_true', help='list available variations of the source font and exit')
@@ -45,8 +45,14 @@ if not args.font:
 
 # variations can be prepared later, after checking for list_variations
 fontpaths = args.font.split(',')
-ttc_indices = args.ttc_index.split(',')
-fontshrinks = args.shrink.split(',')
+if args.ttc_index:
+    ttc_indices = args.ttc_index.split(',')
+else:
+    ttc_indices = ['0' for i in range(0, len(fontpaths))]
+if args.shrink:
+    fontshrinks = args.shrink.split(',')
+else:
+    fontshrinks = ['0' for i in range(0, len(fontpaths))]
 
 if len(fontpaths) != len(ttc_indices):
     print ('Different number of fonts and ttc indices')
