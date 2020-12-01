@@ -11,6 +11,10 @@ font_json_fmt = 'font{}_{}x{}.json'
 font_json_fmt_regex = re_compile(r'font(\d+)(_\d+x\d+)?\.json$')
 
 fontmap_magic = ['FMH3', 'FONM']
+fontmap_farc_filename = {
+    'FMH3': 'fontmap.bin',
+    'FONM': 'fontmap.fnm',
+}
 
 
 def fmh3_from_farc_stream(f):
@@ -45,18 +49,17 @@ if isfile(inp_path):
     print ('Extracting "{}" to directory'.format(inp_path))
     
     with open(inp_path, 'rb') as f:
-        magic = f.read(4).decode('ascii')
-        f.seek(0)
-        
-        if magic in fontmap_magic:
+        try:
             fmh = pyfmh3.from_stream(f)
-        else:
+        except pyfmh3.UnsupportedFmh3TypeException:
             try:
-                pyfarc.check_farc_type(magic)
                 fmh = fmh3_from_farc_stream(f)
             except Exception as e:
                 print (e)
                 exit(1)
+        except Exception as e:
+            print (e)
+            exit(1)
     
     out_dir = inp_path
     while '.' in basename(out_dir):
@@ -68,15 +71,19 @@ if isfile(inp_path):
         mkdir(out_dir)
     
     i = 1
-    for font in fmh:
+    for font in fmh['fonts']:
         with open(joinpath(out_dir, font_json_fmt.format(i, font['advance_width'], font['line_height'])), 'w') as f:
             json.dump(font, f, indent=4)
         i += 1
+    
+    del fmh['fonts']
+    with open(joinpath(out_dir, 'meta.json'), 'w') as f:
+        json.dump(fmh, f, indent=4)
         
 else:
-    print ('Building AFT fontmap farc from directory "{}"'.format(inp_path))
+    print ('Building fontmap farc from directory "{}"'.format(inp_path))
     
-    fmh = []
+    fonts = []
     
     # select and sort matching files by ascending font index
     files = [f for f in listdir(inp_path) if font_json_fmt_regex.match(f)]
@@ -84,10 +91,18 @@ else:
     
     for fname in files:
         with open(joinpath(inp_path, fname), 'r') as f: 
-            fmh += [json.load(f)]
+            fonts += [json.load(f)]
+    
+    try:
+        with open(joinpath(inp_path, 'meta.json'), 'r') as f:
+            fmh = json.load(f)
+    except:
+        fmh = {'fmh3_type': 'FMH3'}
+    
+    fmh['fonts'] = fonts
     
     fmh_bytes = pyfmh3.to_bytes(fmh)
-    farcdata = {'farc_type': 'FArC', 'files': {'fontmap.bin': {'data': fmh_bytes}}}
+    farcdata = {'farc_type': 'FArC', 'files': {fontmap_farc_filename[fmh['fmh3_type']]: {'data': fmh_bytes}}}
     
     if inp_path[-1] in ['/', '\\']:
         inp_path = inp_path[:-1]

@@ -24,6 +24,7 @@ Look in guides folder.
  
  ###### Writing
  - AFT/FT/M39s fontmap.farc
+ - Writing X fontmap.farc is experimental
 
 　
 
