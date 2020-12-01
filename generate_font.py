@@ -12,6 +12,7 @@ def get_args():
     parser.add_argument('-i', '--ttc_index', default=0, help='font index for ttc files')
     parser.add_argument('-s', '--size', default=24, help='font size to use (optional)')
     parser.add_argument('-m', '--metrics', default=None, help='use manual size metrics (comma separated advance, line height, width, height)')
+    parser.add_argument('--force_baseline', default=None, help='force the baseline position as a multiplier of font size (from the top of character box)')
 
     parser.add_argument('--list_variations', action='store_true', help='list available variations of the source font and exit')
 
@@ -111,6 +112,7 @@ else:
     
     # kanji_box_size/font_advance_size will be based on the actual space used by a full-size character
     kanji_box_size = max(pil_font.getbbox('鬱', anchor='lt')[2:]) + 1 # just using a square for now
+    kanji_box_size = max(kanji_box_size, int(args.size)) # ensure advance and line height are at least equal to font size
     font_advance_size = (kanji_box_size, kanji_box_size)
 
 
@@ -140,6 +142,9 @@ pil_draw = ImageDraw.Draw(pil_image)
 
 coord = (0, font_ascent)
 tex_idx = (0, 0)
+
+if args.force_baseline != None:
+    coord = (0, font_ascent * float(args.force_baseline))
 
 out_chars = []
 for char in charlist:
