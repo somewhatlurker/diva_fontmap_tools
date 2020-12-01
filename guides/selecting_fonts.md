@@ -1,8 +1,9 @@
 Selecting Fonts
 ===============
 
-The fontmap generator currently requires fonts to support Japanese for good results.
-Fonts without Japanese characters will likely have incorrect spacing and be missing characters.
+For best results it is recommended to use fonts with good Japanese support, but it's possible to get decent results
+using English fonts and Japanese fallback fonts for missing characters.  
+Fonts without Japanese support will have lots of missing characters if used without a Japanese fallback.
 
 Additionally, non-English versions of the games are designed to work with fixed width fonts only,
 but the English versions seem to have proportional (non-fixed width) font support enabled.

@@ -18,6 +18,8 @@ make sure you set the same font size and add `-m [advance_width],[line_height],[
 The positioning of characters within the grid can be set manually with `--force_baseline 0.XX`.
 0.85 should be a good starting point.
 
+Characters can be forced to use less of the available space with `--shrink X` settings
+
 To set a custom character list (what characters to output), add `-c [CHARLIST_TXT]`.
 
 For help selecting a font style/variation from a font with multiple in a single file, read `font_variations.md`.
@@ -25,3 +27,18 @@ For help selecting a font style/variation from a font with multiple in a single 
 　
 
 You can use `-h` for a quick reference.
+
+　
+
+### Fallbacks
+It's possible to make a chain of fonts to fill in missing characters from your main font(s).  
+To facilitate this, `-f`, `-i`, `-v`, and `--shrink` can accept comma-separated lists.
+
+When one option contains a list, all others must also (if they're used).  
+While convoluted this makes it possible to create full fonts using characters from incomplete fonts.
+
+It may take some tweaking of the baseline and shrink settings to find something that looks right.
+
+Example: `generate_font.py -f "comicsans\comic.ttf,uddigikyokasho\UDDigiKyokashoN-R.ttc,bizudgothic\BIZ-UDGothicR.ttc" -i 0,1,1 --shrink 3,1,1 -o comicsans\comicsans -s 36 --force_baseline 0.81`
+
+Try not to worry too much if there's still a few characters missing after adding fallbacks.
