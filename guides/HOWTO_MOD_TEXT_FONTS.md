@@ -1,7 +1,7 @@
 How To Mod Main Text Fonts (Beginners Guide)
 ============================================
 
-Currently, only AFT, FT, and M39s fontmaps can be generated.
+AFT, FT, and M39s fontmaps can be generated. Support for generating X fontmaps is experimental.
 The guide focuses on AFT, but most of it except for font numbers and IDs should work with the other games too.
 
 Before starting, read through `selecting_fonts.md` to help with choosing a font to use.
@@ -27,3 +27,10 @@ Before starting, read through `selecting_fonts.md` to help with choosing a font 
    `python fontmap_extract.py fontmap` (will turn folder contents into a farc)
 6. Replace textures  
    Use the replace flipped option in MikuMikuModel. The fonts are in `spr_fnt_XX`.
+
+　
+
+### Troubleshooting
+- If text is invisible, try reducing the font size until the texture shrinks.
+- If the top or bottom of characters are cut off, try generating the font with `--force_baseline` set to about `0.85`.
+- Debug and test screens seem to have some issues, so don't worry if they look incorrect.

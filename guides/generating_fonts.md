@@ -15,6 +15,9 @@ make sure you set the same font size and add `-m [advance_width],[line_height],[
 (eg. `-m 24,24,26,26`) to the command line.
 (`advance_width`, `line_height`, `box_width`, and `box_height` are from `fontXX_XXxXX.json`)
 
+The positioning of characters within the grid can be set manually with `--force_baseline 0.XX`.
+0.85 should be a good starting point.
+
 To set a custom character list (what characters to output), add `-c [CHARLIST_TXT]`.
 
 For help selecting a font style/variation from a font with multiple in a single file, read `font_variations.md`.
