@@ -11,13 +11,14 @@ except ModuleNotFoundError:
     exit(1)
 
 
-def firstFontWithCharacter(font_info, char):
+def firstFontWithCharacter(font_info, char, print_missing=False):
     # this checks the font's cmap (obtained via fonttools) for presence of a character
     # because pillow has no way to do that
     for font in font_info:
         if ord(char) in font['ft_cmap']:
             return font
     
+    if print_missing: print ('missing character {} (0x{:04x})'.format(char, ord(char)))
     return font_info[0]
 
 def get_args():
@@ -209,7 +210,7 @@ if args.force_baseline != None:
 
 out_chars = []
 for char in charlist:
-    font = firstFontWithCharacter(font_info, char)
+    font = firstFontWithCharacter(font_info, char, print_missing=True)
     width = font['pil_font'].getsize(char)[0]
     halfwidth = width <= max_halfwidth_width
     if halfwidth:
