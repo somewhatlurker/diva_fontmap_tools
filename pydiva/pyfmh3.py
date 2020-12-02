@@ -211,7 +211,7 @@ def to_stream(data, stream, no_copy=False):
                 fonts_pointers_offset=_fonts_pointers_min_offset,
                 fonts=fonts
             )
-        ))
+        ), stream)
     else:
         return fmh3_type['struct'].build_stream(dict(
             fonts_count=len(fonts),
