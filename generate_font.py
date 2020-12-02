@@ -10,6 +10,16 @@ except ModuleNotFoundError:
     print ('fontTools not installed, please reinstall pip requirements')
     exit(1)
 
+try:
+    from PIL import __version__ as pil_version
+    if int(pil_version.split('.')[0]) < 8:
+        print ('Pillow version too low, please intall version 8+')
+        exit(1)
+except:
+    # I'd rather just continue than throw an error if this fails for some reason, like versioning changes
+    # Users following instructions should never have a low version anyway
+    pass
+
 
 def firstFontWithCharacter(font_info, char, print_missing=False):
     # this checks the font's cmap (obtained via fonttools) for presence of a character
