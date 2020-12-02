@@ -10,7 +10,6 @@ from pydiva import pyfarc
 font_json_fmt = 'font{}_{}x{}.json'
 font_json_fmt_regex = re_compile(r'font(\d+)(_\d+x\d+)?\.json$')
 
-fontmap_magic = ['FMH3', 'FONM']
 fontmap_farc_filename = {
     'FMH3': 'fontmap.bin',
     'FONM': 'fontmap.fnm',
@@ -19,12 +18,19 @@ fontmap_farc_filename = {
 
 def fmh3_from_farc_stream(f):
     farc = pyfarc.from_stream(f)
-    for fname, finfo in farc['files'].items():
-        data = finfo['data']
-        if data[:4].decode('ascii') in fontmap_magic:
-            return pyfmh3.from_bytes(data)
+    for fname in fontmap_farc_filename.values():
+        if fname in farc['files']:
+            data = farc['files'][fname]['data']
+            try:
+                b = pyfmh3.from_bytes(data)
+                print ('Loading {} from farc'.format(fname))
+                return b
+            except UnsupportedFmh3TypeException:
+                print ('Input farc cpntains {}, but file is an unsupported type'.format(fname))
+            except Exception as e:
+                print ('Error loading {} from farc: {}'.format(fname, e))
     
-    raise Exception('Couldn\'t find fontmap in farc')
+    raise Exception('Couldn\'t load any fontmap from farc')
 
 def clean_dir(d):
     files = listdir(d)
@@ -55,10 +61,10 @@ if isfile(inp_path):
             try:
                 fmh = fmh3_from_farc_stream(f)
             except Exception as e:
-                print (e)
+                print ('Error: {}'.format(e))
                 exit(1)
         except Exception as e:
-            print (e)
+            print ('Error: {}'.format(e))
             exit(1)
     
     out_dir = inp_path
