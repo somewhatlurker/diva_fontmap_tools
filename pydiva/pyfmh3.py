@@ -5,6 +5,7 @@ can read+write AFT FMH3 and read X FONM
 
 from construct import Struct, Tell, Const, Padding, Int32ul, RepeatUntil, CString, Pointer, Byte, Int16ul, Flag, Int64ul, Seek, If
 from copy import deepcopy
+from io import BytesIO
 
 _fmh3_format = Struct(
     "pointer_offset" / Tell,
@@ -175,49 +176,6 @@ def _get_fmh3_length(fonts):
     return fonts[-1]['data']['chars_pointer'] + _char_array_size(fonts[-1]['data']['chars_count'])
 
 
-def to_bytes(data, no_copy=False):
-    """
-    Converts a dictionary (formatted like the dictionary returned by from_bytes) to an in-memory bytes object containing fontmap data.
-    
-    Set no_copy to True for a speedup and memory usage reduction if you don't mind your input data being contaminated.
-    """
-    
-    magic_str = data['fmh3_type']
-    check_fmh3_type(magic_str)
-    fmh3_type = _fmh3_types[magic_str]
-    
-    if no_copy:
-        fonts = data['fonts']
-    if not no_copy:
-        fonts = deepcopy(data['fonts'])
-    
-    for font in fonts:
-        font['chars_count'] = len(font['chars'])
-    fonts = [{'data': font} for font in fonts]
-    
-    address_size = fmh3_type['address_size']
-    _set_font_pointers(fonts, address_size)
-    _set_char_pointers(fonts, address_size)
-    
-    if fmh3_type['nest_fmh3_data']:
-        data_size =_get_fmh3_length(fonts)
-        return fmh3_type['struct'].build(dict(
-            data_size=data_size,
-            data_pointer=64,
-            fmh3_size=data_size,
-            fmh3_data=dict(
-                fonts_count=len(fonts),
-                fonts_pointers_offset=_fonts_pointers_min_offset,
-                fonts=fonts
-            )
-        ))
-    else:
-        return fmh3_type['struct'].build(dict(
-            fonts_count=len(fonts),
-            fonts_pointers_offset=_fonts_pointers_min_offset,
-            fonts=fonts
-        ))
-
 def to_stream(data, stream, no_copy=False):
     """
     Converts a dictionary (formatted like the dictionary returned by from_stream) to fontmap data and writes it to a stream.
@@ -261,6 +219,17 @@ def to_stream(data, stream, no_copy=False):
             fonts=fonts
         ), stream)
 
+def to_bytes(data, no_copy=False):
+    """
+    Converts a dictionary (formatted like the dictionary returned by from_bytes) to an in-memory bytes object containing fontmap data.
+    
+    Set no_copy to True for a speedup and memory usage reduction if you don't mind your input data being contaminated.
+    """
+    
+    with BytesIO() as s:
+        to_stream(data, s, no_copy)
+        return s.getvalue()
+
 
 def _parsed_to_dict(fmhdata, nested_fmh):
     """Converts the raw construct data to our standard dictionary format."""
@@ -283,16 +252,6 @@ def _parsed_to_dict(fmhdata, nested_fmh):
     
     return {'fmh3_type': magic_str, 'fonts': fonts}
 
-def from_bytes(b):
-    """Converts fontmap data from bytes to a dictionary."""
-    
-    magic_str = b[:4].decode('ascii')
-    check_fmh3_type(magic_str)
-    fmh3_type = _fmh3_types[magic_str]
-    
-    fmhdata = fmh3_type['struct'].parse(b)
-    return _parsed_to_dict(fmhdata, fmh3_type['nest_fmh3_data'])
-
 def from_stream(s):
     """Converts fontmap data from a stream to a dictionary."""
     
@@ -305,3 +264,12 @@ def from_stream(s):
     
     fmhdata = fmh3_type['struct'].parse_stream(s)
     return _parsed_to_dict(fmhdata, fmh3_type['nest_fmh3_data'])
+
+def from_bytes(b):
+    """Converts fontmap data from bytes to a dictionary."""
+    
+    with BytesIO(b) as s:
+        return from_stream(s)
+
+
+# test_fmh = {'fmh3_type': 'FMH3', 'fonts': [{"id":2, "advance_width":24, "line_height":30, "box_width":26, "box_height":32, "layout_param_1":3, "layout_param_2_numerator":1, "layout_param_2_denominator":1, "other_params?":0, "tex_size_chars":19, "chars":[{"codepoint":48, "halfwidth":False, "tex_col":0, "tex_row":0, "glyph_x":0, "glyph_width":24}, {"codepoint":49, "halfwidth":False, "tex_col":1, "tex_row":0, "glyph_x":0, "glyph_width":24}]}]}

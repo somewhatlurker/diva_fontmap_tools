@@ -5,6 +5,7 @@ supports Farc and FarC only
 
 from construct import Struct, Const, Int32ub, Int32sb, RepeatUntil, CString, Pointer, Bytes, Padding
 from copy import deepcopy
+from io import BytesIO
 import gzip
 
 _FArc_format = Struct(
@@ -98,46 +99,6 @@ def _prep_files(files, alignment, farc_type):
         _compress_files(files, farc_type)
     _set_files_pointers(files, alignment, farc_type)
 
-def to_bytes(data, alignment=1, no_copy=False):
-    """
-    Converts a farc dictionary (formatted like the dictionary returned by from_bytes) to an in-memory bytes object containing farc data.
-    
-    Set no_copy to True for a speedup and memory usage reduction if you don't mind your input data being contaminated.
-    """
-    
-    magic_str = data['farc_type']
-    check_farc_type(magic_str)
-    farc_type = _farc_types[magic_str]
-    
-    if no_copy:
-        files = data['files']
-    else:
-        files = deepcopy(data['files'])
-    _prep_files(files, alignment, farc_type)
-    
-    if farc_type['compression_support']:
-        return farc_type['struct'].build(dict(
-            header_size=farc_type['fixed_header_size'] + _files_header_size_calc(files, farc_type),
-            alignment=alignment,
-            files=[dict(
-                name=fname,
-                pointer=info['pointer'],
-                compressed_size=len(info['data_compressed']),
-                uncompressed_size=len(info['data']),
-                data=info['data_compressed']
-            ) for fname, info in files.items()]
-        ))
-    else:
-        return farc_type['struct'].build(dict(
-            header_size=farc_type['fixed_header_size'] + _files_header_size_calc(files, farc_type),
-            alignment=alignment,
-            files=[dict(
-                name=fname,
-                pointer=info['pointer'],
-                size=len(info['data']),
-                data=info['data']
-            ) for fname, info in files.items()]
-        ))
 
 def to_stream(data, stream, alignment=1, no_copy=False):
     """
@@ -180,6 +141,17 @@ def to_stream(data, stream, alignment=1, no_copy=False):
             ) for fname, info in files.items()]
         ), stream)
 
+def to_bytes(data, alignment=1, no_copy=False):
+    """
+    Converts a farc dictionary (formatted like the dictionary returned by from_bytes) to an in-memory bytes object containing farc data.
+    
+    Set no_copy to True for a speedup and memory usage reduction if you don't mind your input data being contaminated.
+    """
+    
+    with BytesIO() as s:
+        to_stream(data, s, alignment, no_copy)
+        return s.getvalue()
+
 
 def _parsed_to_dict(farcdata, farc_type):
     """Converts the raw construct data to our standard dictionary format."""
@@ -200,16 +172,6 @@ def _parsed_to_dict(farcdata, farc_type):
     
     return {'farc_type': farcdata['signature'].decode('ascii'), 'files': files}
 
-def from_bytes(b):
-    """Converts farc data from bytes to a dictionary."""
-    
-    magic_str = b[:4].decode('ascii')
-    check_farc_type(magic_str)
-    farc_type = _farc_types[magic_str]
-    
-    farcdata = farc_type['struct'].parse(b)
-    return _parsed_to_dict(farcdata, farc_type)
-
 def from_stream(s):
     """Converts farc data from a stream to a dictionary."""
     
@@ -221,6 +183,12 @@ def from_stream(s):
     
     farcdata = farc_type['struct'].parse_stream(s)
     return _parsed_to_dict(farcdata, farc_type)
+
+def from_bytes(b):
+    """Converts farc data from bytes to a dictionary."""
+    
+    with BytesIO(b) as s:
+        return from_stream(s)
 
 
 #test_farc = {'farc_type': 'FArc', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}}
