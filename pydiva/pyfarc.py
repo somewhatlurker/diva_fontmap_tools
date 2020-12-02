@@ -10,9 +10,9 @@ import gzip
 
 _construct_version = None
 try:
-    from construct import __version__ as construct_version
-    _construct_version = [int(v) for v in construct_version.split('.')]
-except:
+    from construct import __version__ as _construct_version
+    _construct_version = [int(v) for v in _construct_version.split('.')]
+except Exception:
     # I'd rather just continue than throw an error if this fails for some reason, like versioning changes,
     # so just let _construct_version be None
     # Users following instructions should never have a low version anyway

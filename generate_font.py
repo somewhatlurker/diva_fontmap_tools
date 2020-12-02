@@ -11,11 +11,23 @@ except ModuleNotFoundError:
     exit(1)
 
 try:
-    from PIL import __version__ as pil_version
-    if int(pil_version.split('.')[0]) < 8:
+    from PIL import __version__ as _pil_version
+    _pil_version = [int(v) for v in _pil_version.split('.')]
+    if _pil_version[0] < 8:
         print ('Pillow version too low, please intall version 8+')
         exit(1)
-except:
+except Exception:
+    # I'd rather just continue than throw an error if this fails for some reason, like versioning changes
+    # Users following instructions should never have a low version anyway
+    pass
+
+try:
+    from fontTools import __version__ as _fonttools_version
+    _fonttools_version = [int(v) for v in _fonttools_version.split('.')]
+    if (_fonttools_version[0] < 3) or ((_fonttools_version[0] == 3) and (_fonttools_version[1] < 19)):
+        print ('fontTools version too low, please intall version 3.19+')
+        exit(1)
+except Exception:
     # I'd rather just continue than throw an error if this fails for some reason, like versioning changes
     # Users following instructions should never have a low version anyway
     pass
