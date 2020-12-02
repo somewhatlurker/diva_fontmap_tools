@@ -7,6 +7,21 @@ from construct import Struct, Tell, Const, Padding, Int32ul, RepeatUntil, CStrin
 from copy import deepcopy
 from io import BytesIO
 
+_construct_version = None
+try:
+    from construct import __version__ as construct_version
+    _construct_version = [int(v) for v in construct_version.split('.')]
+except:
+    # I'd rather just continue than throw an error if this fails for some reason, like versioning changes,
+    # so just let _construct_version be None
+    # Users following instructions should never have a low version anyway
+    pass
+
+if _construct_version:
+    if (_construct_version[0] < 2) or ((_construct_version[0] == 2) and (_construct_version[1] < 9)):
+        raise Exception('Construct version too low, please install version 2.9+')
+
+
 _fmh3_format = Struct(
     "pointer_offset" / Tell,
     "signature" / Const(b'FMH3'),
