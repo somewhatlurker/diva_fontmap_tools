@@ -18,7 +18,7 @@ def firstFontWithCharacter(font_info, char, print_missing=False):
         if ord(char) in font['ft_cmap']:
             return font
     
-    if print_missing: print ('missing character {} (0x{:04x})'.format(char, ord(char)))
+    if print_missing: print ('No font found for character {} (0x{:04x})'.format(char, ord(char)))
     return font_info[0]
 
 def get_args():
@@ -123,7 +123,13 @@ if not args.charlist:
 charlist = ''
 try:
     with open(args.charlist, 'r', encoding='utf-16') as f:
-        charlist = f.read()
+        for char in f.read():
+            if ord(char) <= 65535:
+                charlist += char
+            else:
+                print ('Ignoring invalid character in charlist: {} (0x{:04x})'.format(char, ord(char)))
+                print ('Only characters in the BMP (codepoint <= 65535) are supported')
+
 except Exception as e:
     print ('Error loading charlist: {}'.format(str(e)))
     exit(1)
