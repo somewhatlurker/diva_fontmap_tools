@@ -95,6 +95,7 @@ for font in font_info:
         font['pil_font'] = ImageFont.truetype(font['path'], int(args.size) - 1 - int(font['shrink']), int(font['ttc_index']))
         font['ft_font'] = TTFont(font['path'], fontNumber=int(font['ttc_index']))
         font['ft_cmap'] = font['ft_font'].getBestCmap()
+        if not font['ft_cmap']: raise Exception('Couldn\'t find usable character map')
     except Exception as e:
         print ('Error loading font: {}'.format(str(e)))
         exit(1)
