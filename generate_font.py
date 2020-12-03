@@ -54,6 +54,7 @@ def get_args():
     parser.add_argument('-m', '--metrics', default=None, help='use manual size metrics (comma separated advance, line height, width, height)')
     parser.add_argument('--shrink', default=None, help='shrink the amount of space each character takes in its box by X pixels')
     parser.add_argument('--force_baseline', default=None, help='force the baseline position as a multiplier of font size (from the top of character box)')
+    parser.add_argument('--sega_style_proportional', action='store_true', help='use with fixed width fonts to add proportional-like rendering of halfwidth characters')
 
     parser.add_argument('--list_variations', action='store_true', help='list available variations of the source font and exit')
 
@@ -191,8 +192,8 @@ else:
     max_char_width = 0
     for char in charlist: # iterate to find widest used char
         font = firstFontWithCharacter(font_info, char)
-        junk, char_ascent, char_right, char_baseline = font['pil_font'].getbbox(char, anchor='ls')
-        max_char_width = max(max_char_width, char_right)
+        char_left, char_ascent, char_right, char_baseline = font['pil_font'].getbbox(char, anchor='ls')
+        max_char_width = max(max_char_width, char_right - char_left)
         full_ascent = max(full_ascent, char_ascent * -1)
         full_baseline = max(full_baseline, char_baseline)
         
@@ -239,13 +240,70 @@ if args.force_baseline != None:
 out_chars = []
 for char in charlist:
     font = firstFontWithCharacter(font_info, char, print_missing=True)
-    width = font['pil_font'].getsize(char)[0]
+    
+    # now use getbbox because it's more similar to the real positioning
+    # and we can ensure we don't lose the left edge of characters
+    bbox = font['pil_font'].getbbox(char, anchor='lt')
+    
+    # let characters get cut off by a pixel on the left in a vain attempt to maintain spacing,
+    # but never more --- yeah, this is kinda useless ik
+    # (bbox_adj becomes like bbox[0])
+    if bbox[0] < 0:
+        bbox_adj = bbox[0] + 1
+    else:
+        bbox_adj = 0
+    
+    width = bbox[2] - bbox_adj
+    
     halfwidth = width <= max_halfwidth_width
     if halfwidth:
         x_adj = (max_halfwidth_width - width) // 2
     else:
         x_adj = (font_box_size[0] - width) // 2
-    pil_draw.text((coord[0] + x_adj, coord[1]), char, fill=0xffffffff, font=font['pil_font'], anchor='ls')
+    
+    # subtract bbox_adj when drawing to properly position left edge with where we expect it
+    # (draw_text internally adds an offset equal to bbox[:2])
+    pil_draw.text((coord[0] + x_adj - bbox_adj, coord[1]), char, fill=0xffffffff, font=font['pil_font'], anchor='ls')
+    
+    if args.sega_style_proportional:
+        # create an image to draw the character's mask into, then get that data
+        char_image = Image.new('L', (bbox[2] - bbox[0], bbox[3] - bbox[1]), color=0x00000000)
+        char_draw = ImageDraw.Draw(char_image)
+        image_storage = font['pil_font'].getmask(char, mode='L', anchor='lt')
+        # draw left edge at bbox[0] - bbox_adj to match draw_text's offset
+        char_draw.draw.draw_bitmap((bbox[0] - bbox_adj, 0), image_storage, 255) # 255 is char_draw._getink(0xffffffff)[0], but removed to reduce undocumented internal calls
+        char_data = char_image.getdata()
+        
+        # find the left and right pixel edges
+        mark_x_first = -1
+        mark_x_last = -1
+        found_left_edge = False
+        for x in range(0, char_image.width):
+            col_has_pixels = False
+            for y in range(0, char_image.height):
+                p = char_data[x + y * char_image.width]
+                if p:
+                    col_has_pixels = True
+                    break
+            
+            if col_has_pixels:
+                mark_x_last = x
+                if not found_left_edge:
+                    mark_x_first = x
+                    found_left_edge = True
+        
+        char_image.close()
+        
+        if mark_x_last >= 0: # only act upon characters with pixels in them
+            mark_x_first = max(0, mark_x_first)
+            mark_x_last = max(mark_x_first, mark_x_last)
+            
+            # change the output values to write
+            x_adj += mark_x_first
+            width = mark_x_last - mark_x_first
+            # add a little padding because it looks weird without it in AFT
+            if x_adj + width < font_box_size[0]:
+                width += 1
     
     out_chars += [{
         "codepoint": ord(char),
