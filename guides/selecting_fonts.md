@@ -11,6 +11,9 @@ but the English versions seem to have proportional (non-fixed width) font suppor
 Non-English versions can be patched to enable proportional font support.  
 The included `proportional_main_font.p` patch does this for AFT's main 24px fonts.
 
+To make fonts that work well with unpatched Japanese and English versions of games, use fixed width fonts in conjuction
+with `--sega_style_proportional` to add proportional rendering information to a fixed width font like the official ones.
+
 　
 
 To tell whether your font is fixed width or proportional, write out a line of English text and another line filled with

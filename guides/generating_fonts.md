@@ -15,10 +15,10 @@ make sure you set the same font size and add `-m [advance_width],[line_height],[
 (eg. `-m 24,24,26,26`) to the command line.
 (`advance_width`, `line_height`, `box_width`, and `box_height` are from `fontXX_XXxXX.json`)
 
-The positioning of characters within the grid can be set manually with `--force_baseline 0.XX`.
+The positioning of characters within the grid can be set manually with `--force_baseline 0.XX` if necessary.
 0.85 should be a good starting point.
 
-Characters can be forced to use less of the available space with `--shrink X` settings
+Characters can be forced to use less of the available space with `--shrink X` set to the amount of pixels to shrink by.
 
 To set a custom character list (what characters to output), add `-c [CHARLIST_TXT]`.
 
@@ -42,3 +42,12 @@ It may take some tweaking of the baseline and shrink settings to find something 
 Example: `generate_font.py -f "comicsans\comic.ttf,uddigikyokasho\UDDigiKyokashoN-R.ttc,bizudgothic\BIZ-UDGothicR.ttc" -i 0,1,1 --shrink 3,1,1 -o comicsans\comicsans -s 36 --force_baseline 0.81`
 
 Try not to worry too much if there's still a few characters missing after adding fallbacks.
+
+　
+
+### Sega-Style Proportional
+`--sega_style_proportional` can be used to add proportional rendering information to fixed width fonts.
+This is useful for mods that should work on both Japanese and English versions of games because it will render well
+in both fixed width and proportional modes, like the original fonts.
+
+It may also be useful to try using it if a font renders with weird spacing.
