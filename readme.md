@@ -49,3 +49,15 @@ Look in guides folder.
  - font_res_support.p enables support for fonts without metrics matching the original font they replace (including HD fonts)
  - proportional_main_font.p enables proportional character width on the two main 24px fonts
  - separate_fonts.p makes the non-bold 24px font use font id 15
+
+## Development Info
+License is MIT so do whatever you want, but I'd personally prefer if we avoid forks for now.
+
+FMH3 format for FT series games is in `misc/format.txt`, but the construct Struct in `pydiva/pyfmh3.py` is probably just
+as easy to understand.
+X is similar but some fields become 64 bits long and it's encapsulated in an F2nd/X style file with FONM magic.  
+MikuMikuModel serves as a good reference for how the sectioned F2nd/X files work and also farc for improving pyfarc.
+
+As for in-game stuff for patch development, TLAC's `Drawing.h` and `Drawing.cpp` from the main PD Loader repo have the
+important structs documented pretty well and some functions that'll get you into the important stuff if you just dig
+down into them.
