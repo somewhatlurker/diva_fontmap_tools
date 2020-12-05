@@ -33,4 +33,4 @@ Before starting, read through `selecting_fonts.md` to help with choosing a font 
 ### Troubleshooting
 - If text is invisible, try reducing the font size until the texture shrinks.
 - If the top or bottom of characters are cut off, try generating the font with `--force_baseline` set to about `0.85`.
-- Debug and test screens seem to have some issues, so don't worry if they look incorrect.
+- Test screens seem to have issues with proportional fonts, so don't worry if they look incorrect.
