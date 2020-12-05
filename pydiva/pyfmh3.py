@@ -92,6 +92,16 @@ _fmh3_int64_format = Struct(
     ))),
 )
 
+_eofc_struct = Struct(
+    "pointer_offset" / Tell,
+    "signature" / Const(b'EOFC'),
+    "data_size" / Const(0, Int32ul),
+    "data_pointer" / Const(32, Int32ul),
+    "flags" / Const(b'\x00\x00\x00\x10'),
+    "depth" / Const(0, Int32ul),
+    Padding(12)
+)
+
 _fonm_format = Struct(
     "pointer_offset" / Tell,
     "signature" / Const(b'FONM'),
@@ -104,17 +114,10 @@ _fonm_format = Struct(
     # Seek(lambda this: this.data_pointer + this.fmh3_size),
     # POF1 (relocation) ignored
     # ENRS (endian reversal) ignored
-    If(lambda this: this._building,
-        Pointer(lambda this: this.data_pointer + this.data_size + this.pointer_offset, Struct(
-            "pointer_offset" / Tell,
-            "signature" / Const(b'EOFC'),
-            "data_size" / Const(0, Int32ul),
-            "data_pointer" / Const(32, Int32ul),
-            "flags" / Const(b'\x00\x00\x00\x10'),
-            "depth" / Const(0, Int32ul),
-            Padding(12)
-        ))
-    ),
+    If(lambda this: this._building, Struct(
+        Pointer(lambda this: this._.data_pointer + this._.fmh3_size + this._.pointer_offset, _eofc_struct),
+        Pointer(lambda this: this._.data_pointer + this._.data_size + this._.pointer_offset, _eofc_struct)
+    )),
 )
 
 _fmh3_types = {
@@ -218,7 +221,7 @@ def to_stream(data, stream, no_copy=False):
     if fmh3_type['nest_fmh3_data']:
         data_size =_get_fmh3_length(fonts)
         return fmh3_type['struct'].build_stream(dict(
-            data_size=data_size,
+            data_size=data_size + _eofc_struct.sizeof(),
             data_pointer=64,
             fmh3_size=data_size,
             fmh3_data=dict(
