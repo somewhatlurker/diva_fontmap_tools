@@ -201,7 +201,7 @@ else:
         full_baseline = max(full_baseline, char_baseline)
         
 
-    font_box_size = (max_char_width + 1, full_ascent + full_baseline + 1) # height already is known from metrics
+    font_box_size = (max_char_width + 1, full_ascent + full_baseline + 2)
     
     # kanji_box_size can just use the first specified font
     # kanji_box_size/font_advance_size will be based on the actual space used by a full-size character
