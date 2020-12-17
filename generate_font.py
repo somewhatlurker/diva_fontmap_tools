@@ -256,6 +256,11 @@ for char in charlist:
     
     width = bbox[2] - bbox_adj
     
+    # add extra spacing so outline will definitely render well
+    # if width + 2 <= font_box_size[0]:
+    #     width += 2 # 2px extra width
+    #     bbox_adj -= 1 # 1px shift right on rendering
+    
     halfwidth = width <= max_halfwidth_width
     if halfwidth:
         x_adj = (max_halfwidth_width - width) // 2
@@ -268,7 +273,10 @@ for char in charlist:
     
     if args.sega_style_proportional:
         # create an image to draw the character's mask into, then get that data
-        char_image = Image.new('L', (bbox[2] - bbox[0], bbox[3] - bbox[1]), color=0x00000000)
+        # actual left coord: bbox[0] - bbox_adj
+        # actual char width: bbox[2] - bbox[0]
+        # needed width to render: actual width + actual left coord: bbox[2] - bbox_adj
+        char_image = Image.new('L', (bbox[2] - bbox_adj, bbox[3] - bbox[1]), color=0x00000000)
         char_draw = ImageDraw.Draw(char_image)
         image_storage = font['pil_font'].getmask(char, mode='L', anchor='lt')
         # draw left edge at bbox[0] - bbox_adj to match draw_text's offset
@@ -299,9 +307,14 @@ for char in charlist:
             mark_x_first = max(0, mark_x_first)
             mark_x_last = max(mark_x_first, mark_x_last)
             
+            # add a little padding because it looks weird without it in AFT
+            if mark_x_first > 0:
+                mark_x_first -= 1
+            
             # change the output values to write
             x_adj += mark_x_first
             width = mark_x_last - mark_x_first
+            
             # add a little padding because it looks weird without it in AFT
             if x_adj + width < font_box_size[0]:
                 width += 1
