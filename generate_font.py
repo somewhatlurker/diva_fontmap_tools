@@ -194,6 +194,8 @@ else:
     for char in charlist: # iterate to find widest used char
         font = firstFontWithCharacter(font_info, char)
         char_left, char_ascent, char_right, char_baseline = font['pil_font'].getbbox(char, anchor='ls')
+        if char_left > 0:
+            char_left = 0 # match with calculation of width at render time
         max_char_width = max(max_char_width, char_right - char_left)
         full_ascent = max(full_ascent, char_ascent * -1)
         full_baseline = max(full_baseline, char_baseline)
