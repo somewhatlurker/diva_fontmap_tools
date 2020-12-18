@@ -85,7 +85,7 @@ def _prep_files(files, alignment, farc_type, flags):
         for fname, info in files.items():
             if pos % alignment: pos += alignment - (pos % alignment)
             info['pointer'] = pos
-            if 'data_compressed' in info:
+            if 'data_compressed' in info:   # don't use previously obtained lengths because encryption might change the data size
                 pos += len(info['data_compressed'])
             else:
                 pos += len(info['data'])
@@ -120,6 +120,14 @@ def to_stream(data, stream, alignment=1, no_copy=False):
     check_farc_type(magic_str)
     farc_type = _farc_types[magic_str]
     
+    if farc_type['format_field']:
+        format = data.get('format', 0)
+        if format >= len(farc_type['format_field']):
+            raise UnsupportedFarcTypeException('Unknown sub-format {} for {} type'.format(format, magic_str))
+        
+        magic_str = farc_type['format_field'][format]
+        farc_type = _farc_types[magic_str]
+    
     if not farc_type['write_support']:
         raise UnsupportedFarcTypeException('Writing {} type not supported'.format(magic_str))
     
@@ -127,7 +135,10 @@ def to_stream(data, stream, alignment=1, no_copy=False):
     if farc_type['has_flags'] and 'flags' in data:
         flags['compressed'] = data['flags'].get('compressed')
         flags['encrypted'] = data['flags'].get('encrypted')
-        
+    
+    if flags['encrypted'] and not farc_type['encryption_write_support']:
+        raise UnsupportedFarcTypeException('Writing {} type with encryption not supported'.format(magic_str))
+    
     
     if no_copy:
         files = data['files']
@@ -200,6 +211,9 @@ def _parsed_to_dict(farcdata, farc_type):
                 data = zlib.decompress(data, wbits=16+zlib.MAX_WBITS, bufsize=f['uncompressed_size'])
             
             files[f['name']] = {'data': data}
+            if farc_type['has_per_file_flags']:
+                files[f['name']]['flags'] = dict(flags)
+                del files[f['name']]['flags']['_io']
     
     elif farc_type['compression_support']:
         for f in farcdata['files']:
@@ -217,7 +231,10 @@ def _parsed_to_dict(farcdata, farc_type):
     
     out = {'farc_type': farcdata['signature'].decode('ascii'), 'files': files}
     if farc_type['has_flags']:
-        out['flags'] = farcdata['flags']
+        out['flags'] = dict(farcdata['flags'])
+        del out['flags']['_io']
+    if farc_type['format_field']:
+        out['format'] = farcdata['format']
     return out
 
 def from_stream(s):
@@ -249,6 +266,9 @@ def from_bytes(b):
 #test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'flags': {'encrypted': True}}
 #test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'flags': {'compressed': True}}
 #test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'flags': {'encrypted': True, 'compressed': True}}
+#test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'format': 1}
+#test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'flags': {'compressed': True}, 'format': 1}
+#test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'flags': {'encrypted': True}, 'format': 1}
 #print (test_farc)
 
 #test_bytes = to_bytes(test_farc, alignment=16)
