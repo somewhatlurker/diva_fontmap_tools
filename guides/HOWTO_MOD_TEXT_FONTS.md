@@ -7,11 +7,11 @@ The guide focuses on AFT, but most of it except for font numbers and IDs should 
 Before starting, read through `selecting_fonts.md` to help with choosing a font to use.
 
 1. Extract original fontmap  
-   **For AFT:** `python fontmap_extract.py fontmap.farc`  
-   **For other games:** Extract fontmap.bin with Farcpack or MMM, then `python fontmap_extract.py fontmap.bin`
+   `python fontmap_extract.py fontmap.farc`  
+   If you get an error about needing Crypto module, reinstall requirements.txt using pip (step 2 of installation).
 2. Generate a bold font  
-   See `generating_fonts.md` for info.
-   Use `misc/charlist_m39s.txt` as the charlist for games that aren't AFT.
+   See `generating_fonts.md` for info.  
+   Use the charlist tool to generate a custom character list if not modding a Japanese or English FT series game.
 3. Generate a regular font  
    **For AFT:** If you patch the game to have separate fontmaps, you can generate an entirely different font.  
    Without a patch, you should only use the same font as used for the bold one (but the non-bold version),

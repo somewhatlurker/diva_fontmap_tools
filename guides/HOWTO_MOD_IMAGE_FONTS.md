@@ -8,8 +8,8 @@ The guide focuses on AFT, but most of it should work with the other games too.
 They must be manually generated.
 
 1. Extract original fontmap  
-   **For AFT:** `python fontmap_extract.py fontmap.farc`  
-   **For other games:** Extract fontmap.bin with Farcpack or MMM, then `python fontmap_extract.py fontmap.bin`
+   `python fontmap_extract.py fontmap.farc`  
+   If you get an error about needing Crypto module, reinstall requirements.txt using pip (step 2 of installation).
 2. Create your bitmap sheet of characters  
    All characters should be in a neat, evenly-spaced grid for this to work properly.
    Start at the top-left corner, going left-to-right then top-to-bottom.
