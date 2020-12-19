@@ -7,7 +7,7 @@ from io import BytesIO
 import gzip
 import zlib # gzip module's decompress doesn't handle junk at end of file
 from pydiva.pyfarc_formats import _farc_types
-from pydiva.pyfarc_ft_helpers import _is_FT_FARC, _decrypt_FT_farc
+from pydiva.pyfarc_ft_helpers import _is_FT_FARC, _decrypt_FT_farc, _encrypt_FT_FARC
 
 try:
     from Crypto.Cipher import AES
@@ -46,26 +46,23 @@ def _prep_files(files, alignment, farc_type, flags):
     def _compress_files(files, farc_type):
         for fname, info in files.items():
             if info['flags']['compressed']:
-                info['data_compressed'] = gzip.compress(info['data'], mtime=39) # set mtime for reproducible output
-                if farc_type['compression_forced'] or (len(info['data_compressed']) < len(info['data'])):
+                data_compressed = gzip.compress(info['data'], mtime=39) # set mtime for reproducible output
+                if farc_type['compression_forced'] or (len(data_compressed) < len(info['data'])):
+                    info['data'] = data_compressed
                     info['flags']['compressed'] = True
                 else:
-                    info['data_compressed'] = info['data']
+                    # this is an optimisation where files that don't compress well can be stored uncompressed in some
+                    # farc types -- by not replacing data, compressed and uncompressed lengths will be the same
                     info['flags']['compressed'] = False
-            else:
-                info['data_compressed'] = info['data']
             
-            info['len_compressed'] = len(info['data_compressed'])
+            info['len_compressed'] = len(info['data'])
     
     def _encrypt_files(files, farc_type):
         for fname, info in files.items():
             if not info['flags']['encrypted']:
                 continue
             
-            if 'data_compressed' in info:
-                data = info['data_compressed']
-            else:
-                data = info['data']
+            data = info['data']
             
             while len(data) % 16:
                 data += b'\x00'
@@ -74,10 +71,7 @@ def _prep_files(files, alignment, farc_type, flags):
                 cipher = AES.new(b'project_diva.bin', AES.MODE_ECB)
                 data = cipher.encrypt(data)
             
-            if 'data_compressed' in info:
-                info['data_compressed'] = data
-            else:
-                info['data'] = data
+            info['data'] = data
        
     def _set_files_pointers(files, alignment, farc_type):
         pos = 8 + farc_type['fixed_header_size'] + _files_header_size_calc(files, farc_type)
@@ -85,10 +79,7 @@ def _prep_files(files, alignment, farc_type, flags):
         for fname, info in files.items():
             if pos % alignment: pos += alignment - (pos % alignment)
             info['pointer'] = pos
-            if 'data_compressed' in info:   # don't use previously obtained lengths because encryption might change the data size
-                pos += len(info['data_compressed'])
-            else:
-                pos += len(info['data'])
+            pos += len(info['data']) # don't use previously obtained length because encryption might change the data size
     
     for fname, info in files.items():
         info['len_uncompressed'] = len(info['data'])
@@ -146,8 +137,12 @@ def to_stream(data, stream, alignment=1, no_copy=False):
         files = deepcopy(data['files'])
     _prep_files(files, alignment, farc_type, flags)
     
+    if flags['encrypted'] and farc_type['encryption_type'] == 'FT':
+        og_stream = stream
+        stream = BytesIO()
+    
     if farc_type['compression_support']:
-        return farc_type['struct'].build_stream(dict(
+        farc_type['struct'].build_stream(dict(
             header_size=farc_type['fixed_header_size'] + _files_header_size_calc(files, farc_type),
             flags=flags,
             entry_count=len(files),
@@ -158,11 +153,11 @@ def to_stream(data, stream, alignment=1, no_copy=False):
                 compressed_size=info['len_compressed'],
                 uncompressed_size=info['len_uncompressed'],
                 flags=info['flags'],
-                data=info['data_compressed']
+                data=info['data']
             ) for fname, info in files.items()]
         ), stream)
     else:
-        return farc_type['struct'].build_stream(dict(
+        farc_type['struct'].build_stream(dict(
             header_size=farc_type['fixed_header_size'] + _files_header_size_calc(files, farc_type),
             flags=flags,
             entry_count=len(files),
@@ -175,6 +170,11 @@ def to_stream(data, stream, alignment=1, no_copy=False):
                 data=info['data']
             ) for fname, info in files.items()]
         ), stream)
+    
+    if flags['encrypted'] and farc_type['encryption_type'] == 'FT':
+        stream.seek(0)
+        _encrypt_FT_FARC(stream, og_stream)
+        stream.close()
 
 def to_bytes(data, alignment=1, no_copy=False):
     """
@@ -246,11 +246,19 @@ def from_stream(s):
     farc_type = _farc_types[magic_str]
     s.seek(pos)
     
+    close_ft_stream = False
     if _is_FT_FARC(s):
         farc_type = _farc_types['FARC_FT']
-        s = _decrypt_FT_farc(s)
+        decrypt_stream = _decrypt_FT_farc(s)
+        if decrypt_stream:
+            s = decrypt_stream
+            close_ft_stream = True
     
     farcdata = farc_type['struct'].parse_stream(s)
+    
+    if close_ft_stream: # explicitly close BytesIO from FT decryption if one was opened
+        s.close()
+    
     return _parsed_to_dict(farcdata, farc_type)
 
 def from_bytes(b):
@@ -267,8 +275,9 @@ def from_bytes(b):
 #test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'flags': {'compressed': True}}
 #test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'flags': {'encrypted': True, 'compressed': True}}
 #test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'format': 1}
-#test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'flags': {'compressed': True}, 'format': 1}
 #test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'flags': {'encrypted': True}, 'format': 1}
+#test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'flags': {'compressed': True}, 'format': 1}
+#test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'flags': {'encrypted': True, 'compressed': True}, 'format': 1}
 #print (test_farc)
 
 #test_bytes = to_bytes(test_farc, alignment=16)

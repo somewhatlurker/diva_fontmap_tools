@@ -2,6 +2,14 @@
 FT file helper functions for pyfarc
 """
 
+from io import BytesIO
+from secrets import token_bytes
+
+try:
+    from Crypto.Cipher import AES
+except Exception:
+    pass # main pyfarc module already handles this
+
 def _needs_FT_decryption(s):
     """Checks if the FARC file stream needs FT-type decryption"""
     
@@ -51,20 +59,42 @@ def _decrypt_FT_farc(s):
     """Returns a decrypted copy of the FT FARC file stream"""
     
     if not _is_FT_FARC(s):
-        return s
+        return None
     
     if not _needs_FT_decryption(s):
-        return s
+        return None
     
     og_pos = s.tell()
     
     out = BytesIO()
-    s.seek(0)
     out.write(s.read(16))
     cipher = AES.new(b'\x13\x72\xD5\x7B\x6E\x9E\x31\xEB\xA2\x39\xB8\x3C\x15\x57\xC6\xBB', AES.MODE_CBC, iv=s.read(16))
     data = cipher.decrypt(s.read())
     out.write(data)
     
     s.seek(og_pos)
-    out.seek(og_pos)
+    out.seek(0)
     return out
+
+def _encrypt_FT_FARC(instream, outstream):
+    """Encrypts from instream and writes to outstream"""
+    
+    if not _is_FT_FARC(instream) or _needs_FT_decryption(instream):
+        # file doesn't need encryption???
+        #outstream.write(instream.read())
+        #return
+        raise Exception('Wrong format FARC or already encrypted')
+    
+    outstream.write(instream.read(16))
+    
+    data = instream.read()
+    while len(data) % 16:
+        data += b'\x00'
+    
+    iv = token_bytes(16)
+    outstream.write(iv)
+    cipher = AES.new(b'\x13\x72\xD5\x7B\x6E\x9E\x31\xEB\xA2\x39\xB8\x3C\x15\x57\xC6\xBB', AES.MODE_CBC, iv=iv)
+    data = cipher.encrypt(data)
+    outstream.write(data)
+    
+    return
