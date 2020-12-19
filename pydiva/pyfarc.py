@@ -122,7 +122,7 @@ def to_stream(data, stream, no_copy=False):
     if not farc_type['write_support']:
         raise UnsupportedFarcTypeException('Writing {} type not supported'.format(magic_str))
     
-    alignment = data.get('alignment', 1)
+    alignment = data.get('alignment', 16)
     
     flags = {'encrypted': False, 'compressed': farc_type['compression_forced']}
     if farc_type['has_flags'] and 'flags' in data:
