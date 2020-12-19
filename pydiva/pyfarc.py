@@ -242,9 +242,9 @@ def from_stream(s):
     
     pos = s.tell()
     magic_str = s.read(4).decode('ascii')
+    s.seek(pos)
     check_farc_type(magic_str)
     farc_type = _farc_types[magic_str]
-    s.seek(pos)
     
     close_ft_stream = False
     if _is_FT_FARC(s):
