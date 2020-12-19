@@ -93,7 +93,7 @@ def _prep_files(files, alignment, farc_type, flags):
     for fname, info in files.items():
         info['len_uncompressed'] = len(info['data'])
         
-        if not 'flags' in info:
+        if (not 'flags' in info) or (not farc_type['has_per_file_flags']):
             info['flags'] = {}
         if not 'encrypted' in info['flags']:
             info['flags']['encrypted'] = flags.get('encrypted')
