@@ -19,8 +19,8 @@ Look in guides folder.
  ##### Format Support
  ###### Reading
  - AFT fontmap.farc or fontmap.bin
- - FT/M39s fontmap.bin (direct farc reading not supported)
- - X fontmap.fnm (direct farc reading not supported)
+ - FT/M39s fontmap.farc or fontmap.bin
+ - X fontmap_fnm.farc or fontmap.fnm
  
  ###### Writing
  - AFT/FT/M39s fontmap.farc
