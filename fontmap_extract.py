@@ -23,7 +23,7 @@ def fmh3_from_farc_stream(f):
             data = farc['files'][fname]['data']
             try:
                 b = pyfmh3.from_bytes(data)
-                print ('Loading {} from farc'.format(fname))
+                print ('Loaded {} from farc'.format(fname))
                 return b
             except UnsupportedFmh3TypeException:
                 print ('Input farc cpntains {}, but file is an unsupported type'.format(fname))
