@@ -19,6 +19,7 @@ The main API makes use of nested python dictionaries to represent data:
             }
         }
     },
+    'alignment': 16,                 # alignment of files (can be omitted)
     'flags': {                       # feature flags (only for FARC, can be omitted)
         'encrypted': False,
         'compressed': True
@@ -69,7 +70,7 @@ Example:
 farcdata = {'farc_type': 'FArC', 'files': {'test': {'data': b'test'}}}
 with open('test.farc', 'wb') as f:
     pyfarc.to_stream(farcdata, f)
-farc_to_bytes = pyfarc.to_bytes`(farcdata, alignment=16, no_copy=True)
+farc_to_bytes = pyfarc.to_bytes(farcdata, no_copy=True)
 ```
 
 Setting `no_copy` provides a speedup and memory usage reduction, but the input will be contaminated with internal data

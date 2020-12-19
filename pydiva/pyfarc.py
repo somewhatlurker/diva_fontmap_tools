@@ -100,7 +100,7 @@ def _prep_files(files, alignment, farc_type, flags):
     _set_files_pointers(files, alignment, farc_type)
 
 
-def to_stream(data, stream, alignment=1, no_copy=False):
+def to_stream(data, stream, no_copy=False):
     """
     Converts a farc dictionary (formatted like the dictionary returned by from_stream) to farc data and writes it to a stream.
     
@@ -121,6 +121,8 @@ def to_stream(data, stream, alignment=1, no_copy=False):
     
     if not farc_type['write_support']:
         raise UnsupportedFarcTypeException('Writing {} type not supported'.format(magic_str))
+    
+    alignment = data.get('alignment', 1)
     
     flags = {'encrypted': False, 'compressed': farc_type['compression_forced']}
     if farc_type['has_flags'] and 'flags' in data:
@@ -176,7 +178,7 @@ def to_stream(data, stream, alignment=1, no_copy=False):
         _encrypt_FT_FARC(stream, og_stream)
         stream.close()
 
-def to_bytes(data, alignment=1, no_copy=False):
+def to_bytes(data, no_copy=False):
     """
     Converts a farc dictionary (formatted like the dictionary returned by from_bytes) to an in-memory bytes object containing farc data.
     
@@ -184,7 +186,7 @@ def to_bytes(data, alignment=1, no_copy=False):
     """
     
     with BytesIO() as s:
-        to_stream(data, s, alignment, no_copy)
+        to_stream(data, s, no_copy)
         return s.getvalue()
 
 
@@ -229,7 +231,7 @@ def _parsed_to_dict(farcdata, farc_type):
             data = f['data']
             files[f['name']] = {'data': data}
     
-    out = {'farc_type': farcdata['signature'].decode('ascii'), 'files': files}
+    out = {'farc_type': farcdata['signature'].decode('ascii'), 'files': files, 'alignment': farcdata['alignment']}
     if farc_type['has_flags']:
         out['flags'] = dict(farcdata['flags'])
         del out['flags']['_io']
@@ -268,19 +270,19 @@ def from_bytes(b):
         return from_stream(s)
 
 
-#test_farc = {'farc_type': 'FArc', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}}
-#test_farc = {'farc_type': 'FArC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}}
-#test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}}
-#test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'flags': {'encrypted': True}}
+#test_farc = {'farc_type': 'FArc', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'alignment': 16}
+#test_farc = {'farc_type': 'FArC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'alignment': 8}
+#test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'alignment': 4}
+#test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'alignment': 32, 'flags': {'encrypted': True}}
 #test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'flags': {'compressed': True}}
 #test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'flags': {'encrypted': True, 'compressed': True}}
-#test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'format': 1}
-#test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'flags': {'encrypted': True}, 'format': 1}
+#test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'alignment': 8, 'format': 1}
+#test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'alignment': 16, 'flags': {'encrypted': True}, 'format': 1}
 #test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'flags': {'compressed': True}, 'format': 1}
 #test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'flags': {'encrypted': True, 'compressed': True}, 'format': 1}
 #print (test_farc)
 
-#test_bytes = to_bytes(test_farc, alignment=16)
+#test_bytes = to_bytes(test_farc)
 #print (test_bytes)
 #print (from_bytes(test_bytes))
 
