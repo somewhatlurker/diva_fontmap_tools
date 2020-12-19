@@ -40,6 +40,28 @@ with open('test.farc', 'rb') as f:
 
 `pyfarc.UnsupportedFarcTypeException` will be raised if the supplied file is not a known farc type.
 
+
+`pydiva.farc_load_helper.farc_load_helper` can be used to quickly get the content of a list of filenames from a farc.  
+If not a supported farc, the original file's content will be returned as a nameless file so you can read it directly.  
+Useful for easy fallback to reading already extracted files.  
+Example:
+```
+with open('farc_or_bin?', 'rb') as f:
+    farc_files = farc_load_helper(f, ['test.bin', 'test2.bin'])
+
+if len(farc_files) == 0:
+    raise Exception('Found farc but it didn\'t contain test.bin or test2.bin')
+
+for f in farc_files:
+    if f[0]:
+        print ('Loading {} from farc'.format(f[0]))
+    else
+        print ('Loading original file directly (maybe it\'s already extracted)')
+
+    process_file(f[1])
+```
+
+
 ### Writing Data
 Use `pyfarc.to_stream` or `pyfarc.to_bytes` to convert the dictionary representation to raw data.  
 Example:
