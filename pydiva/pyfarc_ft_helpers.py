@@ -67,7 +67,13 @@ def _decrypt_FT_farc(s):
     og_pos = s.tell()
     
     out = BytesIO()
-    out.write(s.read(16))
+    
+    out.write(s.read(4)) # signature
+    header_size = int.from_bytes(s.read(4), byteorder='big', signed=False)
+    header_size -= 16 # iv seems to count towards header size
+    out.write(header_size.to_bytes(4, byteorder='big', signed=False))
+    out.write(s.read(8)) # other plaintext header stuff
+    
     cipher = AES.new(b'\x13\x72\xD5\x7B\x6E\x9E\x31\xEB\xA2\x39\xB8\x3C\x15\x57\xC6\xBB', AES.MODE_CBC, iv=s.read(16))
     data = cipher.decrypt(s.read())
     out.write(data)
@@ -85,7 +91,11 @@ def _encrypt_FT_FARC(instream, outstream):
         #return
         raise Exception('Wrong format FARC or already encrypted')
     
-    outstream.write(instream.read(16))
+    outstream.write(instream.read(4)) # signature
+    header_size = int.from_bytes(instream.read(4), byteorder='big', signed=False)
+    header_size += 16 # iv seems to count towards header size
+    outstream.write(header_size.to_bytes(4, byteorder='big', signed=False))
+    outstream.write(instream.read(8)) # other plaintext header stuff
     
     data = instream.read()
     while len(data) % 16:
