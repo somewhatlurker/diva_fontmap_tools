@@ -1,3 +1,4 @@
 construct >= 2.9.0
 pillow >= 8.0.0
 fonttools >= 3.19.0
+pycryptodome
