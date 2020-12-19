@@ -5,32 +5,17 @@ from re import compile as re_compile
 import json
 from pydiva import pyfmh3
 from pydiva import pyfarc
+from pydiva.farc_load_helper import farc_load_helper
 
 
 font_json_fmt = 'font{}_{}x{}.json'
 font_json_fmt_regex = re_compile(r'font(\d+)(_\d+x\d+)?\.json$')
 
-fontmap_farc_filename = {
+fontmap_farc_filenames = {
     'FMH3': 'fontmap.bin',
     'FONM': 'fontmap.fnm',
 }
 
-
-def fmh3_from_farc_stream(f):
-    farc = pyfarc.from_stream(f)
-    for fname in fontmap_farc_filename.values():
-        if fname in farc['files']:
-            data = farc['files'][fname]['data']
-            try:
-                b = pyfmh3.from_bytes(data)
-                print ('Loaded {} from farc'.format(fname))
-                return b
-            except UnsupportedFmh3TypeException:
-                print ('Input farc cpntains {}, but file is an unsupported type'.format(fname))
-            except Exception as e:
-                print ('Error loading {} from farc: {}'.format(fname, e))
-    
-    raise Exception('Couldn\'t load any fontmap from farc')
 
 def clean_dir(d):
     files = listdir(d)
@@ -55,17 +40,19 @@ if isfile(inp_path):
     print ('Extracting "{}" to directory'.format(inp_path))
     
     with open(inp_path, 'rb') as f:
-        try:
-            fmh = pyfmh3.from_stream(f)
-        except pyfmh3.UnsupportedFmh3TypeException:
-            try:
-                fmh = fmh3_from_farc_stream(f)
-            except Exception as e:
-                print ('Error: {}'.format(e))
-                exit(1)
-        except Exception as e:
-            print ('Error: {}'.format(e))
-            exit(1)
+        farc_files = farc_load_helper(f, fontmap_farc_filenames.values())
+    
+    if len(farc_files) == 0:
+        print ('Error: Found farc with no known fontmap files')
+        exit(1)
+    elif farc_files[0][0]:
+        print ('Loading {} from farc'.format(farc_files[0][0]))
+    
+    try:
+        fmh = pyfmh3.from_bytes(farc_files[0][1])
+    except Exception as e:
+        print ('Error: {}'.format(e))
+        exit(1)
     
     out_dir = inp_path
     while '.' in basename(out_dir):
@@ -108,7 +95,7 @@ else:
     fmh['fonts'] = fonts
     
     fmh_bytes = pyfmh3.to_bytes(fmh)
-    farcdata = {'farc_type': 'FArC', 'files': {fontmap_farc_filename[fmh['fmh3_type']]: {'data': fmh_bytes}}}
+    farcdata = {'farc_type': 'FArC', 'files': {fontmap_farc_filenames[fmh['fmh3_type']]: {'data': fmh_bytes}}}
     
     if inp_path[-1] in ['/', '\\']:
         inp_path = inp_path[:-1]
