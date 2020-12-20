@@ -4,10 +4,11 @@ pyfarc reader and writer for farc archives
 
 from copy import deepcopy
 from io import BytesIO
+from secrets import token_bytes
 import gzip
 import zlib # gzip module's decompress doesn't handle junk at end of file
 from pydiva.pyfarc_formats import _farc_types
-from pydiva.pyfarc_ft_helpers import _is_FT_FARC, _decrypt_FT_farc, _encrypt_FT_FARC
+from pydiva.pyfarc_ft_helpers import _is_FT_FARC, _decrypt_FT_FARC_header, _encrypt_FT_FARC_header
 
 try:
     from Crypto.Cipher import AES
@@ -70,11 +71,22 @@ def _prep_files(files, alignment, farc_type, flags):
             if farc_type['encryption_type'] == 'DT':
                 cipher = AES.new(b'project_diva.bin', AES.MODE_ECB)
                 data = cipher.encrypt(data)
+            elif farc_type['encryption_type'] == 'FT':
+                iv = token_bytes(16)
+                cipher = AES.new(b'\x13\x72\xD5\x7B\x6E\x9E\x31\xEB\xA2\x39\xB8\x3C\x15\x57\xC6\xBB', AES.MODE_CBC, iv=iv)
+                data = iv + cipher.encrypt(data)
+                
+                # encrypted FT FARC "compressed" length seems to include IV and be aligned
+                info['len_compressed'] = len(data)
             
             info['data'] = data
        
-    def _set_files_pointers(files, alignment, farc_type):
+    def _set_files_pointers(files, alignment, farc_type, encrypted):
         pos = 8 + farc_type['fixed_header_size'] + _files_header_size_calc(files, farc_type)
+        
+        if encrypted and farc_type['encryption_type'] == 'FT':
+            pos += 16 # leave space for header IV
+            if pos % 16: pos += 16 - (pos % 16) # ensure space exists for AES
         
         for fname, info in files.items():
             if pos % alignment: pos += alignment - (pos % alignment)
@@ -97,7 +109,7 @@ def _prep_files(files, alignment, farc_type, flags):
     if flags.get('encrypted') and farc_type['encryption_type']:
         _encrypt_files(files, farc_type)
     
-    _set_files_pointers(files, alignment, farc_type)
+    _set_files_pointers(files, alignment, farc_type, flags.get('encrypted', False))
 
 
 def to_stream(data, stream, no_copy=False):
@@ -175,7 +187,7 @@ def to_stream(data, stream, no_copy=False):
     
     if flags['encrypted'] and farc_type['encryption_type'] == 'FT':
         stream.seek(0)
-        _encrypt_FT_FARC(stream, og_stream)
+        _encrypt_FT_FARC_header(stream, og_stream)
         stream.close()
 
 def to_bytes(data, no_copy=False):
@@ -208,9 +220,15 @@ def _parsed_to_dict(farcdata, farc_type):
                 if farc_type['encryption_type'] == 'DT':
                     cipher = AES.new(b'project_diva.bin', AES.MODE_ECB)
                     data = cipher.decrypt(data)
+                elif farc_type['encryption_type'] == 'FT':
+                    cipher = AES.new(b'\x13\x72\xD5\x7B\x6E\x9E\x31\xEB\xA2\x39\xB8\x3C\x15\x57\xC6\xBB', AES.MODE_CBC, iv=data[:16])
+                    data = cipher.decrypt(data[16:])
             
             if flags.get('compressed') and (farc_type['compression_forced'] or (f['uncompressed_size'] != f['compressed_size'])):
                 data = zlib.decompress(data, wbits=16+zlib.MAX_WBITS, bufsize=f['uncompressed_size'])
+            else:
+                if flags.get('encrypted'): # if encrypted but not compressed, need to strip padding manually
+                    data = data[:f['uncompressed_size']]
             
             files[f['name']] = {'data': data}
             if farc_type['has_per_file_flags']:
@@ -251,7 +269,7 @@ def from_stream(s):
     close_ft_stream = False
     if _is_FT_FARC(s):
         farc_type = _farc_types['FARC_FT']
-        decrypt_stream = _decrypt_FT_farc(s)
+        decrypt_stream = _decrypt_FT_FARC_header(s)
         if decrypt_stream:
             s = decrypt_stream
             close_ft_stream = True
