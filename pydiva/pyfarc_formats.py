@@ -82,7 +82,7 @@ _FARC_FT_format = Struct(
     "alignment" / Int32sb,          # (if is encrypted and popcnt of alignment is not 1, assume FT format)
     "format" / Const(1, Int32sb),   # this struct only supports FT with unencrypted header
     "entry_count" / Int32sb,
-    Padding(4),
+    IfThenElse(lambda this: this._parsing, Padding(4), Const(16, Int32sb)),
     "files" / RepeatUntil(lambda obj,lst,ctx: (ctx._io.tell() - 7 > ctx.header_size) or (ctx._index >= ctx.entry_count-1), Struct(
         "name" / CString("utf8"),
         "pointer" / Int32ub,
