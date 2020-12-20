@@ -106,7 +106,7 @@ def _prep_files(files, alignment, farc_type, flags):
     if farc_type['compression_support']:
         _compress_files(files, farc_type)
     
-    if flags.get('encrypted') and farc_type['encryption_type']:
+    if farc_type['encryption_type']:
         _encrypt_files(files, farc_type)
     
     _set_files_pointers(files, alignment, farc_type, flags.get('encrypted', False))
@@ -298,6 +298,7 @@ def from_bytes(b):
 #test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'alignment': 16, 'flags': {'encrypted': True}, 'format': 1}
 #test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'flags': {'compressed': True}, 'format': 1}
 #test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2'}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa'}}, 'flags': {'encrypted': True, 'compressed': True}, 'format': 1}
+#test_farc = {'farc_type': 'FARC', 'files': {'aaa': {'data': b'test1'}, 'bbb': {'data': b'test2', 'flags': {'encrypted': True}}, 'ccc': {'data': b'aaaaaaaaaaaaaaaaaaaaaaaa', 'flags': {'encrypted': True, 'compressed': True}}}, 'format': 1}
 #print (test_farc)
 
 #test_bytes = to_bytes(test_farc)
