@@ -18,14 +18,14 @@ def _needs_FT_decryption(s):
     s.seek(og_pos + 11)
     encrypted = True if s.read(1)[0] & 4 else False
     
-    s.seek(og_pos + 16)
-    alignment_bits_popcnt = sum([bin(x).count('1') for x in s.read(4)])
+    #s.seek(og_pos + 16)
+    #alignment_bits_popcnt = sum([bin(x).count('1') for x in s.read(4)])
     
     s.seek(og_pos + 20)
     format = s.read(4)
     
     # heuristic-based detection similar to MML
-    if encrypted and (alignment_bits_popcnt != 1 or format[:3] != b'\x00\x00\x00'):
+    if encrypted and format[:3] != b'\x00\x00\x00':
         s.seek(og_pos)
         return True
     
