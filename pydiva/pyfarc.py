@@ -5,6 +5,7 @@ pyfarc reader and writer for farc archives
 from copy import deepcopy
 from io import BytesIO
 from secrets import token_bytes
+from os import getenv
 import gzip
 import zlib # gzip module's decompress doesn't handle junk at end of file
 from pydiva.pyfarc_formats import _farc_types
@@ -12,6 +13,7 @@ from pydiva.pyfarc_ft_helpers import _is_FT_FARC, _decrypt_FT_FARC_header, _encr
 
 try:
     from Crypto.Cipher import AES
+    from Crypto.Util.Padding import pad
     _crypto_installed = True
 except Exception:
     _crypto_installed = False
@@ -65,14 +67,17 @@ def _prep_files(files, alignment, farc_type, flags):
             
             data = info['data']
             
-            while len(data) % 16:
-                data += b'\x00'
-            
             if farc_type['encryption_type'] == 'DT':
+                while len(data) % 16:
+                    data += b'\x00'
                 cipher = AES.new(b'project_diva.bin', AES.MODE_ECB)
                 data = cipher.encrypt(data)
             elif farc_type['encryption_type'] == 'FT':
-                iv = token_bytes(16)
+                data = pad(data, 16, 'pkcs7')
+                if getenv('PYFARC_NULL_IV'):
+                    iv = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+                else:
+                    iv = token_bytes(16)
                 cipher = AES.new(b'\x13\x72\xD5\x7B\x6E\x9E\x31\xEB\xA2\x39\xB8\x3C\x15\x57\xC6\xBB', AES.MODE_CBC, iv=iv)
                 data = iv + cipher.encrypt(data)
                 
@@ -324,3 +329,111 @@ def from_bytes(b):
 #    fontmapfarc = from_stream(f)
 #with open('fontmap_out.farc', 'wb') as f:
 #    to_stream(fontmapfarc, f, alignment=1, no_copy=True)
+
+
+def _main(args):
+    """main func for command line"""
+    
+    from os.path import dirname, exists as pathexists, isfile, splitext, join as joinpath, basename
+    from os import listdir, makedirs, remove as removefile, environ
+    
+    if not args.input:
+        if not args.silent: print ('No input specified.')
+        exit(1)
+
+    if not pathexists(args.input):
+        if not args.silent: print ('Can\'t find file or directory "{}"'.format(args.input))
+        exit(1)
+    
+    if isfile(args.input):
+        def clean_dir(d):
+            files = listdir(d)
+            for f in files:
+                removefile(joinpath(d, f))
+        
+        if not args.silent: print ('Extracting "{}" to directory'.format(args.input))
+        
+        with open(args.input, 'rb') as f:
+            farc = from_stream(f)
+        
+        out_dir = args.input
+        while '.' in basename(out_dir):
+            out_dir = splitext(out_dir)[0]
+        
+        if pathexists(out_dir):
+            if not args.force:
+                if not args.silent: print ('"{}" already exists. Use -f/--force to overwrite it.'.format(out_dir))
+                exit(1)
+            if isfile(out_dir):
+                if not args.silent: print ('Can\'t output because "{}" is a file, not a directory.'.format(out_dir))
+                exit(1)
+            clean_dir(out_dir)
+        else:
+            makedirs(out_dir)
+        
+        for fname, info in farc['files'].items():
+            with open(joinpath(out_dir, fname), 'wb') as f:
+                f.write(info['data'])
+            
+    else:
+        if not args.silent: print ('Building farc from directory "{}"'.format(args.input))
+        
+        farc = {
+            'farc_type': 'FARC' if args.type == 'FARC_FT' else args.type,
+            'format': 1 if args.type == 'FARC_FT' else 0,
+            'alignment': int(args.alignment),
+            'flags': {
+                'encrypted': args.encrypt,
+                'compressed': args.compress
+            },
+            'files': {}
+        }
+        
+        for fname in listdir(args.input):
+            with open(joinpath(args.input, fname), 'rb') as f: 
+                farc['files'][fname] = {'data': f.read()}
+        
+        out_path = args.input
+        if out_path[-1] in ['/', '\\']:
+            out_path = out_path[:-1]
+        
+        out_path += '.farc'
+        
+        if pathexists(out_path):
+            if not args.force:
+                if not args.silent: print ('"{}" already exists. Use -f/--force to overwrite it.'.format(out_path))
+                exit(1)
+            if not isfile(out_path):
+                if not args.silent: print ('Can\'t output because "{}" is a directory, not a file.'.format(out_path))
+                exit(1)
+        
+        if args.null_iv:
+            environ['PYFARC_NULL_IV'] = '1'
+        elif 'PYFARC_NULL_IV' in environ:
+            del environ['PYFARC_NULL_IV']
+        
+        with open(out_path, 'wb') as f:
+            to_stream(farc, f)
+
+
+if __name__ == '__main__':
+    from os.path import dirname, exists as pathexists, isfile, splitext, join as joinpath, basename
+    from os import listdir, makedirs, remove as removefile, environ
+    import argparse
+    
+    def get_args():
+        parser = argparse.ArgumentParser(description='pyfarc')
+        
+        parser.add_argument('-t', '--type', default='FArC', choices=['FArc', 'FArC', 'FARC', 'FARC_FT'], help='type of farc')
+        parser.add_argument('-c', '--compress', action='store_true', help='compress output (only for FARC, FARC_FT types)')
+        parser.add_argument('-e', '--encrypt', action='store_true', help='encrypt output (only for FARC, FARC_FT types)')
+        parser.add_argument('-a', '--alignment', default='16', help='output farc alignment')
+        parser.add_argument('--null_iv', action='store_true', help='use null encryption IVs (only for encrypted FARC_FT)')
+        parser.add_argument('-f', '--force', action='store_true', help='force overwrite existing files/directories')
+        parser.add_argument('-s', '--silent', action='store_true', help='disable command line output')
+        parser.add_argument('input', default=None, help='input farc to extract or directory to archive')
+
+        return parser.parse_args()
+
+    _main(get_args())
+    

@@ -2,7 +2,7 @@
 FMH3 format information for pyfmh3
 """
 
-from construct import Struct, Tell, Const, Padding, Int32ul, RepeatUntil, CString, Pointer, Byte, Int16ul, Flag, Int64ul, Seek, If
+from construct import Struct, Tell, Const, Padding, Int32ul, RepeatUntil, CString, Pointer, Byte, Int16ul, Flag, Int64ul, Bytes, Seek, If
 
 _construct_version = None
 try:
@@ -89,31 +89,45 @@ _fmh3_int64_format = Struct(
     ))),
 )
 
-_eofc_struct = Struct(
+_pof1_struct = Struct(
     "pointer_offset" / Tell,
-    "signature" / Const(b'EOFC'),
-    "data_size" / Const(0, Int32ul),
+    "signature" / Const(b'POF1'),
+    "section_size" / Int32ul,
     "data_pointer" / Const(32, Int32ul),
     "flags" / Const(b'\x00\x00\x00\x10'),
     "depth" / Const(0, Int32ul),
-    Padding(12)
+    "data_size" / Int32ul,
+    Padding(8),
+    # hardcoded offset for this instead of pointer
+    "data" / Bytes(lambda this: this.data_size)
+)
+
+_eofc_struct = Struct(
+    "pointer_offset" / Tell,
+    "signature" / Const(b'EOFC'),
+    "section_size" / Const(0, Int32ul),
+    "data_pointer" / Const(32, Int32ul),
+    "flags" / Const(b'\x00\x00\x00\x10'),
+    "depth" / Const(0, Int32ul),
+    "data_size" / Const(0, Int32ul),
+    Padding(8)
 )
 
 _fonm_format = Struct(
     "pointer_offset" / Tell,
     "signature" / Const(b'FONM'),
-    "data_size" / Int32ul,
+    "section_size" / Int32ul,
     "data_pointer" / Int32ul,
     "flags" / Const(b'\x00\x00\x00\x10'),
     "depth" / Const(0, Int32ul),
-    "fmh3_size" / Int32ul,
-    "fmh3_data" / Pointer(lambda this: this.data_pointer + this.pointer_offset, _fmh3_int64_format),
-    # Seek(lambda this: this.data_pointer + this.fmh3_size),
-    # POF1 (relocation) ignored
+    "data_size" / Int32ul,
+    "data" / Pointer(lambda this: this.data_pointer + this.pointer_offset, _fmh3_int64_format),
+    # Seek(lambda this: this.data_pointer + this.data_size),
     # ENRS (endian reversal) ignored
-    If(lambda this: this._building, Struct(
-        Pointer(lambda this: this._.data_pointer + this._.fmh3_size + this._.pointer_offset, _eofc_struct),
-        Pointer(lambda this: this._.data_pointer + this._.data_size + this._.pointer_offset, _eofc_struct)
+    "extra_sections" / If(lambda this: this._building, Struct(
+        "pof1" / Pointer(lambda this: this._.data_pointer + this._.data_size + this._.pointer_offset, _pof1_struct),
+        Pointer(lambda this: this._.data_pointer + this._.data_size + this._.pointer_offset + this.pof1_size, _eofc_struct),
+        Pointer(lambda this: this._.data_pointer + this._.section_size + this._.pointer_offset, _eofc_struct)
     )),
 )
 

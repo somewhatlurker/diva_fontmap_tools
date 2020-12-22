@@ -97,8 +97,7 @@ _FARC_FT_format = Struct(
         "io_pos" / Tell, # save stream position
         "file_end" / IfThenElse(lambda this: this._parsing, Seek(lambda this: this._io.seek(0, 2)), Seek(0x7fffffff)), # dirty trick using Seek for end of file when parsing and max int for building
         Seek(lambda this: this.io_pos), # restore position
-        # not sure if padding data to 16 bytes is actually necessary for FT, but MML seems to read files as such and I can't be bothered testing it
-        "data" / Pointer(lambda this: this.pointer, Bytes(lambda this: min(this.file_end - this.pointer, (this.compressed_size + 16 - (this.compressed_size % 16)) if (this.compressed_size % 16 and this.flags.encrypted) else (this.compressed_size))))
+        "data" / Pointer(lambda this: this.pointer, Bytes(lambda this: (this.compressed_size + 16 - (this.compressed_size % 16)) if (this.compressed_size % 16 and this.flags.encrypted) else (this.compressed_size)))
     )),
     #Padding(lambda this: this.alignment - (this._io.tell() % this.alignment) if this._io.tell() % this.alignment else 0)
 )

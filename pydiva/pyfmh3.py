@@ -5,7 +5,7 @@ can read+write AFT FMH3 and read X FONM
 
 from copy import deepcopy
 from io import BytesIO
-from pydiva.pyfmh3_formats import _eofc_struct, _fmh3_types
+from pydiva.pyfmh3_formats import _eofc_struct, _pof1_struct, _fmh3_types
 
 
 class UnsupportedFmh3TypeException(Exception):
@@ -20,8 +20,8 @@ def check_fmh3_type(t):
     return _fmh3_types[t]['remarks']
 
 
-_fonts_pointers_min_offset = 32
-_fonts_header_size_per_font = 32 # could be 28, but alignment is nicer with 32
+_fonts_pointers_min_offset = 32 # update _gen_pof1_data if changed
+_fonts_header_size_per_font = 32 # update _gen_pof1_data if changed
 _char_data_size = 8
 
 def _fonts_header_pointers_size(n, address_size):
@@ -40,7 +40,7 @@ def _char_array_size(n):
     """Returns the size of a character info array for n characters."""
     
     res = n * _char_data_size
-    if res % 16: res += 16 - (res % 16) # align to 16 bytes
+    if res % 16: res += 16 - (res % 16) # align to 16 bytes -- update _gen_pof1_data if changed
     return res
 
 def _set_font_pointers(fonts, address_size):
@@ -65,6 +65,26 @@ def _get_fmh3_length(fonts):
     """Gets the full length of the FMH3 data from a font with pointers and char counts already set"""
     
     return fonts[-1]['data']['chars_pointer'] + _char_array_size(fonts[-1]['data']['chars_count'])
+
+def _gen_pof1_data(fonts):
+    """Generates the POF1 data to use with these fonts"""
+    
+    # just a quick and dirty implementation; has some assumptions about data layout, but it should be fine
+    pof1_data = b'\x42\x42' # with FMH3 starting at 64 and pointers starting at 32 of FMH3, POF has distance 2 x 2 at starting
+    for i in range(0, len(fonts) - 1): # distance 1 for each font pointer except the first (was 2 for it)
+        pof1_data += b'\x41'
+    pof1_data += b'\x45' if len(fonts) % 2 else b'\x44' # distance 5 for first font definition if there's a gap with no pointer before it due to alignment
+    for i in range(0, len(fonts) - 1): # distance 4 for all remaining font definitions
+        pof1_data += b'\x44'
+    
+    pof1_len = len(pof1_data) + 4
+    pof1_data = pof1_len.to_bytes(4, byteorder='little', signed=False) + pof1_data # prepend length
+    
+    # pad to 16 bytes
+    while len(pof1_data) % 16:
+        pof1_data += b'\x00'
+    
+    return pof1_data
 
 
 def to_stream(data, stream, no_copy=False):
@@ -93,14 +113,24 @@ def to_stream(data, stream, no_copy=False):
     
     if fmh3_type['nest_fmh3_data']:
         data_size =_get_fmh3_length(fonts)
+        pof1_data = _gen_pof1_data(fonts)
+        
         return fmh3_type['struct'].build_stream(dict(
-            data_size=data_size + _eofc_struct.sizeof(),
-            data_pointer=64,
-            fmh3_size=data_size,
-            fmh3_data=dict(
+            section_size=data_size + (len(pof1_data) + 32) + _eofc_struct.sizeof(),
+            data_pointer=64, # update _gen_pof1_data if changed (?)
+            data_size=data_size,
+            data=dict(
                 fonts_count=len(fonts),
                 fonts_pointers_offset=_fonts_pointers_min_offset,
                 fonts=fonts
+            ),
+            extra_sections=dict(
+                pof1=dict(
+                    data=pof1_data,
+                    data_size=len(pof1_data),
+                    section_size=len(pof1_data),
+                ),
+                pof1_size=len(pof1_data) + 32
             )
         ), stream)
     else:
@@ -127,7 +157,7 @@ def _parsed_to_dict(fmhdata, nested_fmh):
     
     magic_str = fmhdata['signature'].decode('ascii')
     if nested_fmh:
-        fmhdata = fmhdata['fmh3_data']
+        fmhdata = fmhdata['data']
     
     fonts = []
     
