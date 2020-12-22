@@ -1,7 +1,8 @@
 Generating Fonts
 ================
 
-To generate a font, use the generate_font tool: `python generate_font.py -f [FONT] -o [OUTPUT_NAME] -s [SIZE]`
+To generate a font, use the generate_font tool: `python generate_font.py -f [FONT] -o [OUTPUT_NAME] -s [SIZE]`  
+If the command line is too confusing, the options are in a GUI if you install the support as described in the readme.
 
 `FONT` should be the filename of a font (not the display name). If you have trouble loading fonts, try copying
 the font file into the same directory you're running the tool from.

@@ -2,8 +2,9 @@ PDAFT Fontmap Tools
 ===================
 
 ## Installation
-1. Install Python 3
+1. Install Python 3.8+ (older versions may work but are unsupported) -- use a venv if you want
 2. Run `python -m pip install -r requirements.txt` in a terminal
+3. (Optional) Run `python -m pip install gooey` if you want GUI support in generate_font
 
 ## Font Modding Guides
 Look in guides folder.
@@ -37,6 +38,7 @@ Look in guides folder.
 #### generate_font (ALPHA)
  - Generates a font.
      (`python generate_font.py -f [FONT] -o [OUTPUT_NAME] -s [SIZE]`, detailed usage with `-h`)
+     (or run with no output set for a GUI if you installed GUI support)
  
  ##### Notes
  - The tool has had very little testing

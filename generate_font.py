@@ -32,6 +32,12 @@ except Exception:
     # Users following instructions should never have a low version anyway
     pass
 
+try:
+    from gooey import Gooey
+    _gooey_installed = True
+except Exception:
+    _gooey_installed = False
+
 
 def firstFontWithCharacter(font_info, char, print_missing=False):
     # this checks the font's cmap (obtained via fonttools) for presence of a character
@@ -43,25 +49,34 @@ def firstFontWithCharacter(font_info, char, print_missing=False):
     if print_missing: print ('No font found for character {} (0x{:04x})'.format(char, ord(char)))
     return font_info[0]
 
-def get_args():
-    parser = argparse.ArgumentParser(description='DIVA Font Generator')
-    parser.add_argument('-f', '--font', default=None, help='source font file')
-    parser.add_argument('-o', '--output_name', default=None, help='name for output png and json files')
-    parser.add_argument('-c', '--charlist', default=joinpath('misc', 'charlist.txt'), help='path to charlist file to use (default: {})'.format(joinpath('misc', 'charlist.txt')))
-    parser.add_argument('-v', '--variation', default=None, help='name of font variation to use (optional)')
-    parser.add_argument('-i', '--ttc_index', default=None, help='font index for ttc files')
-    parser.add_argument('-s', '--size', default=24, help='font size to use (optional)')
-    parser.add_argument('-m', '--metrics', default=None, help='use manual size metrics (comma separated advance, line height, width, height)')
-    parser.add_argument('--shrink', default=None, help='shrink the amount of space each character takes in its box by X pixels')
-    parser.add_argument('--force_baseline', default=None, help='force the baseline position as a multiplier of font size (from the top of character box)')
-    parser.add_argument('--sega_style_proportional', action='store_true', help='use with fixed width fonts to add proportional-like rendering of halfwidth characters')
 
-    parser.add_argument('--list_variations', action='store_true', help='list available variations of the source font and exit')
+def get_args(add_ignore_gooey=True):
+    parser = argparse.ArgumentParser(description='DIVA Font Generator')
+    output_args = parser.add_argument_group('Output', 'set the output options')
+    output_args.add_argument('-o', '--output_name', default=None, help='name for output png and json files')
+    output_args.add_argument('-c', '--charlist', default=joinpath('misc', 'charlist.txt'), help='path to charlist file to use (default: {})'.format(joinpath('misc', 'charlist.txt')))
+    font_args = parser.add_argument_group('Per-Font Settings', 'set the fonts to use -- all arguments accept comma-separated lists for fallback font support')
+    font_args.add_argument('-f', '--font', default=None, help='source font file(s)')
+    font_args.add_argument('-v', '--variation', default=None, help='name of font variation(s) to use (optional)')
+    font_args.add_argument('-i', '--ttc_index', default=None, help='font index for ttc files (optional, use 0 for ttf/otf)')
+    font_args.add_argument('--shrink', default=None, help='shrink the amount of space each character takes in its box by X pixels (optional)')
+    metrics_args = parser.add_argument_group('Font Metrics', 'set font size and positioning settings')
+    metrics_args.add_argument('-s', '--size', default=24, help='font size to use (default: 24)')
+    metrics_args.add_argument('-m', '--metrics', default=None, help='set to use manual size metrics (comma-separated advance, line height, width, height)')
+    metrics_args.add_argument('--force_baseline', default=None, help='set to force the baseline position as a multiplier of font size (from the top of character box)')
+    metrics_args.add_argument('--sega_style_proportional', action='store_true', help='use with fixed width fonts to add proportional-like rendering of halfwidth characters')
+    special_args = parser.add_argument_group('Special Arguments', 'arguments that have special actions instead of affecting output')
+    special_args.add_argument('--list_variations', action='store_true', help='list available variations of the source font(s) and exit')
+    
+    if add_ignore_gooey:
+        parser.add_argument('--ignore-gooey', action='store_true', help=argparse.SUPPRESS)
 
     return parser.parse_args()
 
 args = get_args()
 
+if _gooey_installed and not args.output_name and not args.ignore_gooey:
+    args = Gooey(get_args, use_cmd_args=True)(add_ignore_gooey=False)
 
 if not args.font:
     print ('No font specified')
