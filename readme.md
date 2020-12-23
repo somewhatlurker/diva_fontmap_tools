@@ -2,7 +2,7 @@ PDAFT Fontmap Tools
 ===================
 
 ## Installation
-1. Install Python 3.8+ (older versions may work but are unsupported) -- use a venv if you want
+1. Install Python 3.8+ -- use a venv if you want
 2. Run `python -m pip install -r requirements.txt` in a terminal
 3. (Optional) Run `python -m pip install gooey` if you want GUI support in generate_font
 

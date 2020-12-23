@@ -3,9 +3,14 @@ from os import listdir, mkdir, remove as removefile
 from sys import argv
 from re import compile as re_compile
 import json
-from pydiva import pyfmh3
-from pydiva import pyfarc
-from pydiva.farc_load_helper import farc_load_helper
+
+try:
+    from pydiva import pyfmh3
+    from pydiva import pyfarc
+    from pydiva.farc_load_helper import farc_load_helper
+except ModuleNotFoundError:
+    print ('pydiva not installed, please reinstall pip requiremets')
+    exit(1)
 
 
 font_json_fmt = 'font{}_{}x{}.json'
