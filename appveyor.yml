@@ -1,0 +1,27 @@
+version: '{build}'
+image: Visual Studio 2019
+branches:
+  only:
+    - master
+build_script:
+- cmd: >-
+    C:\Python38\python.exe -m pip install -r requirements.txt
+    
+    C:\Python38\python.exe -m pip install gooey
+    
+    C:\Python38\python.exe -m pip install pyinstaller
+    
+    C:\Python38\Scripts\pyinstaller.exe fontmap_tools.spec
+    
+    ren "dist\fontmap_extract" "fontmap_tools"
+    
+    xcopy /e "dist\charlist" "dist\fontmap_tools"
+    
+    xcopy /e "dist\generate_font" "dist\fontmap_tools"
+    
+    cd "dist\fontmap_tools"
+    
+    7z a %APPVEYOR_BUILD_FOLDER%\diva_fontmap_tools_appveyor.zip *
+
+artifacts:
+- path: diva_fontmap_tools*.zip

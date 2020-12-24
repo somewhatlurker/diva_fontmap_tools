@@ -1,3 +1,4 @@
+from sys import exit
 from PIL import Image, ImageDraw, ImageFont
 from math import ceil
 from os.path import join as joinpath

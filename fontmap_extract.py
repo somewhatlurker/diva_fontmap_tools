@@ -1,6 +1,6 @@
 from os.path import dirname, exists as pathexists, isfile, splitext, join as joinpath, basename
 from os import listdir, mkdir, remove as removefile
-from sys import argv
+from sys import argv, exit
 from re import compile as re_compile
 import json
 

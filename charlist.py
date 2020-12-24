@@ -1,5 +1,5 @@
 from os.path import exists as pathexists, isfile, splitext
-from sys import argv
+from sys import argv, exit
 import json
 
 if len(argv) != 2:
