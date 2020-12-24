@@ -9,7 +9,7 @@ They must be manually generated.
 
 1. Extract original fontmap  
    `python fontmap_extract.py fontmap.farc`  
-   If you get an error about needing Crypto module, reinstall requirements.txt using pip (step 2 of installation).
+   If you get an error about missing something, reinstall requirements.txt using pip (step 2 of installation).
 2. Create your bitmap sheet of characters  
    All characters should be in a neat, evenly-spaced grid for this to work properly.
    Start at the top-left corner, going left-to-right then top-to-bottom.

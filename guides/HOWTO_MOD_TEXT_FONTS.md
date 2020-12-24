@@ -8,7 +8,7 @@ Before starting, read through `selecting_fonts.md` to help with choosing a font 
 
 1. Extract original fontmap  
    `python fontmap_extract.py fontmap.farc`  
-   If you get an error about needing Crypto module, reinstall requirements.txt using pip (step 2 of installation).
+   If you get an error about missing something, reinstall requirements.txt using pip (step 2 of installation).
 2. Generate a bold font  
    See `generating_fonts.md` for info.  
    Use the charlist tool to generate a custom character list if not modding a Japanese or English FT series game.

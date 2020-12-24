@@ -55,10 +55,10 @@ Look in guides folder.
 ## Development Info
 License is MIT so do whatever you want, but I'd personally prefer if we avoid forks for now.
 
-FMH3 format for FT series games is in `misc/format.txt`, but the construct Struct in `pydiva/pyfmh3.py` is probably just
-as easy to understand.
-X is similar but some fields become 64 bits long and it's encapsulated in an F2nd/X style file with FONM magic.  
-MikuMikuModel serves as a good reference for how the sectioned F2nd/X files work and also farc for improving pyfarc.
+Diva file formats are handled by pydiva. Check there to get an idea of what's going on.
+
+Font related stuff is kinda messy tbh, and could do with some cleanup, but most of the stuff was added in response to
+specific issues so please don't go changing or removing anything unless you test it well or know what you're doing.
 
 As for in-game stuff for patch development, TLAC's `Drawing.h` and `Drawing.cpp` from the main PD Loader repo have the
 important structs documented pretty well and some functions that'll get you into the important stuff if you just dig
