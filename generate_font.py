@@ -76,6 +76,11 @@ def get_args(add_ignore_gooey=True):
 
 args = get_args()
 
+if args.ignore_gooey:
+    # fix encoding and buffering when running via Gooey in pyinstaller
+    import sys
+    sys.stdout = open(sys.stdout.fileno(), 'w', 1, encoding='utf-8', closefd=False)
+
 if _gooey_installed and not args.output_name and not args.ignore_gooey:
     args = Gooey(get_args, use_cmd_args=True)(add_ignore_gooey=False)
 
