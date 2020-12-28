@@ -44,6 +44,9 @@ def firstFontWithCharacter(font_info, char, print_missing=False):
     # this checks the font's cmap (obtained via fonttools) for presence of a character
     # because pillow has no way to do that
     for font in font_info:
+        if not 'ft_cmap' in font:
+            return font
+        
         if ord(char) in font['ft_cmap']:
             return font
     
@@ -114,9 +117,18 @@ for i in range(0, len(fontpaths)):
 for font in font_info:
     try:
         font['pil_font'] = ImageFont.truetype(font['path'], int(args.size) - 1 - int(font['shrink']), int(font['ttc_index']))
-        font['ft_font'] = TTFont(font['path'], fontNumber=int(font['ttc_index']))
-        font['ft_cmap'] = font['ft_font'].getBestCmap()
-        if not font['ft_cmap']: raise Exception('Couldn\'t find usable character map')
+        
+        try:
+            font['ft_font'] = TTFont(font['path'], fontNumber=int(font['ttc_index']))
+            font['ft_cmap'] = font['ft_font'].getBestCmap()
+            if not font['ft_cmap']: raise Exception('Couldn\'t find usable character map')
+        except Exception as e:
+            if 'ft_font' in font:
+                del font['ft_font']
+            if 'ft_cmap' in font:
+                del font['ft_cmap']
+            print ('Unable to load cmap, fallback will not work -- {}'.format(e))
+    
     except Exception as e:
         print ('Error loading font: {}'.format(str(e)))
         exit(1)
