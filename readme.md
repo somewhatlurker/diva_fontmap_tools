@@ -1,5 +1,5 @@
-PDAFT Fontmap Tools
-===================
+Diva Fontmap Tools
+==================
 
 ## Installation
 1. Install Python 3.8+ -- use a venv if you want
