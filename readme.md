@@ -22,10 +22,12 @@ Look in guides folder.
  - AFT fontmap.farc or fontmap.bin
  - FT/M39s fontmap.farc or fontmap.bin
  - X fontmap_fnm.farc or fontmap.fnm
+ - F2nd (BE) fontmap_fnm.farc or fontmap.fnm
  
  ###### Writing
  - AFT/FT/M39s fontmap.farc
  - Writing X fontmap.farc is experimental
+ - Writing F2nd fontmap.farc is experimental
 
 　
 

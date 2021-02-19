@@ -1,7 +1,7 @@
 How To Mod Image Fonts (Beginners Guide)
 ========================================
 
-Currently, only AFT, FT, and M39s fontmaps can be generated.
+AFT, FT, and M39s fontmaps can be generated. Support for generating X and F2nd fontmaps is experimental.
 The guide focuses on AFT, but most of it should work with the other games too.
 
 "Image fonts" refers to stuff like the stylised numbers used for scores.

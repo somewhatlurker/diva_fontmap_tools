@@ -19,6 +19,7 @@ font_json_fmt_regex = re_compile(r'font(\d+)(_\d+x\d+)?\.json$')
 fontmap_farc_filenames = {
     'FMH3': 'fontmap.bin',
     'FONM': 'fontmap.fnm',
+    'FONM_F2': 'fontmap.fnm',
 }
 
 

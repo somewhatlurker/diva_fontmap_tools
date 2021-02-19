@@ -1,7 +1,7 @@
 How To Mod Main Text Fonts (Beginners Guide)
 ============================================
 
-AFT, FT, and M39s fontmaps can be generated. Support for generating X fontmaps is experimental.
+AFT, FT, and M39s fontmaps can be generated. Support for generating X and F2nd fontmaps is experimental.
 The guide focuses on AFT, but most of it except for font numbers and IDs should work with the other games too.
 
 Before starting, read through `selecting_fonts.md` to help with choosing a font to use.
