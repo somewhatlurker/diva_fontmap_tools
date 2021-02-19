@@ -245,7 +245,7 @@ else:
 
 # find the texture size to use and how many chars will fit in a row
 def fits_in_tex(texture_size, char_size, num_chars):
-    chars_per_row = texture_size[0] // char_size[0]
+    chars_per_row = min(texture_size[0] // char_size[0], 256)
     if chars_per_row == 0: return False
     needed_rows = ceil(num_chars / chars_per_row)
     return texture_size[1] >= needed_rows * char_size[1]
@@ -257,7 +257,8 @@ while not fits_in_tex(texture_size, font_box_size, len(charlist)):
     else:
         texture_size = (texture_size[0] * 2, texture_size[1])
 
-chars_per_row = texture_size[0] // font_box_size[0]
+# I guess it should be max 256 chars in a row due to tex_col being one byte
+chars_per_row = min(texture_size[0] // font_box_size[0], 256)
 
 
 max_halfwidth_width = ceil(font_box_size[0] / 2)
