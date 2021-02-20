@@ -17,7 +17,11 @@ with open(inp_path, 'r') as f:
 
 out_str = ''
 for c in fontdata['chars']:
-    out_str += chr(c['codepoint'])
+    ch = c['codepoint']
+    if ch >= 0xd800 and ch <= 0xdfff:
+        print ('Ignoring invalid codepoint: 0x{:04x}'.format(ch))
+    else:
+        out_str += chr(ch)
 
 out_path = splitext(inp_path)[0] + '_charlist.txt'
 
